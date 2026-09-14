@@ -1,4 +1,4 @@
-import AppLayout from './AppLayout'
+import AppLayout from './layout/AppLayout'
 
 const App = () => {
   return (
