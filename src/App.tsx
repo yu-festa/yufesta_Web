@@ -1,8 +1,10 @@
-import React from 'react'
+import AppLayout from './AppLayout'
 
 const App = () => {
   return (
-    <div className="text-3xl text-red-500">App</div>
+    <AppLayout>
+      <div className="text-3xl text-red-500">App</div>
+    </AppLayout>
   )
 }
 
