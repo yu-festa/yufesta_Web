@@ -4,6 +4,21 @@ type Phase = 'loading' | 'ready' | 'waiting' | 'accepted' | 'received' | 'blocke
 type Status = { phase: Phase; message: string }
 type Connection = { registration: ServiceWorkerRegistration; key: Uint8Array<ArrayBuffer> }
 
+function supportsPush() {
+  return window.isSecureContext && 'Notification' in window
+    && 'PushManager' in window && 'serviceWorker' in navigator
+}
+
+function initialStatus(): Status {
+  if (!supportsPush()) return {
+    phase: 'unsupported', message: '이 환경에서는 웹 푸시를 사용할 수 없어요. iPhone은 홈 화면에 추가한 앱에서 열어 주세요.',
+  }
+  if (Notification.permission === 'denied') return {
+    phase: 'blocked', message: '알림이 차단되어 있어요. 브라우저 또는 기기 설정에서 이 사이트의 알림을 허용한 뒤 새로고침해 주세요.',
+  }
+  return { phase: 'loading', message: '알림 연결을 확인하고 있어요.' }
+}
+
 function decodeKey(value: string): Uint8Array<ArrayBuffer> {
   const decoded = atob(value.replace(/-/g, '+').replace(/_/g, '/'))
   return Uint8Array.from(decoded, character => character.charCodeAt(0))
@@ -40,10 +55,35 @@ async function readyWorker(): Promise<ServiceWorkerRegistration> {
   }
 }
 
+async function currentWorker(): Promise<ServiceWorkerRegistration> {
+  const registration = await readyWorker()
+  await registration.update()
+  const installing = registration.installing || registration.waiting
+  if (installing && installing.state !== 'activated') {
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        installing.removeEventListener('statechange', check)
+        reject(new Error('앱 업데이트가 지연되고 있어요. 새로고침한 뒤 다시 확인해 주세요.'))
+      }, 12000)
+      function check() {
+        if (installing!.state === 'activated' || installing!.state === 'redundant') {
+          clearTimeout(timeout)
+          installing!.removeEventListener('statechange', check)
+          if (installing!.state === 'activated') resolve()
+          else reject(new Error('앱 업데이트에 실패했습니다. 새로고침해 주세요.'))
+        }
+      }
+      installing.addEventListener('statechange', check)
+      check()
+    })
+  }
+  return registration
+}
+
 export default function PushNotificationTest() {
-  const [status, setStatus] = useState<Status>({ phase: 'loading', message: '알림 연결을 확인하고 있어요.' })
+  const [status, setStatus] = useState<Status>(initialStatus)
   const connection = useRef<Connection | null>(null)
-  const pageOpenedAt = useRef(performance.now())
+  const pageOpenedAt = useRef(0)
   const initialized = useRef(false)
   const running = useRef(false)
   const renewSubscription = useRef(false)
@@ -92,21 +132,14 @@ export default function PushNotificationTest() {
     // React StrictMode must not schedule two pushes for a single visit.
     if (initialized.current) return
     initialized.current = true
-    if (!window.isSecureContext || !('Notification' in window)
-      || !('PushManager' in window) || !('serviceWorker' in navigator)) {
-      setStatus({ phase: 'unsupported', message: '이 환경에서는 웹 푸시를 사용할 수 없어요. iPhone은 홈 화면에 추가한 앱에서 열어 주세요.' })
-      return
-    }
-    if (Notification.permission === 'denied') {
-      setStatus({ phase: 'blocked', message: '알림이 차단되어 있어요. 브라우저 또는 기기 설정에서 이 사이트의 알림을 허용한 뒤 새로고침해 주세요.' })
-      return
-    }
+    pageOpenedAt.current = performance.now()
+    if (!supportsPush() || Notification.permission === 'denied') return
 
     void (async () => {
       try {
         const [configuration, registration] = await Promise.all([
           fetch('/api/push-test', { cache: 'no-store', signal: AbortSignal.timeout(12000) }).then(readResponse),
-          readyWorker(),
+          currentWorker(),
         ])
         const key = decodeKey(configuration.publicKey)
         connection.current = { registration, key }
@@ -170,7 +203,7 @@ export default function PushNotificationTest() {
     : status.phase === 'ready' ? '알림 허용하고 테스트'
     : status.phase === 'blocked' ? '알림 권한을 확인해 주세요'
     : status.phase === 'unsupported' ? '지원 환경에서 열어 주세요'
-    : connection.current ? '3초 후 알림 다시 받기' : '다시 확인'
+    : ['accepted', 'received'].includes(status.phase) ? '3초 후 알림 다시 받기' : '다시 시도'
 
   return (
     <section className="py-8 text-gray-900">
