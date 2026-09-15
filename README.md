@@ -66,7 +66,7 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 페이지 내부 이동을 위한 라우터는 아직 없으며, 앱 시작 상태는 `src/App.tsx`에서 관리합니다.
 
 - `src/pages/Splash.tsx`: 이미지와 표시 시간, 종료 처리, 기기 상단 테마 색상
-- `src/pages/Splash.css`: 지정된 그라데이션, 반응형 이미지 배치, 모션 줄이기 설정
+- 스플래시 그라데이션과 반응형 배치는 `Splash.tsx`의 Tailwind 클래스로 관리합니다.
 - `src/pages/Main.tsx`: 공연 안내, 인스타팅 배너, 타임테이블, 응원, 지도·분실물 바로가기
 - `src/assets/Splash/`: 제공된 SplashLogo.svg와 YUICON.svg 원본
 
@@ -83,7 +83,7 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 
 ## Main 홈 화면
 
-`src/pages/Main.css`에서 메인 스타일을 관리합니다. 타임테이블 포스터와 응원 목록은
+`src/pages/Main.tsx`의 Tailwind 클래스로 메인 스타일을 관리합니다. 타임테이블 포스터와 응원 목록은
 가로로 스크롤할 수 있으며, 나머지 페이지는 세로 스크롤을 사용합니다.
 공연 안내·타임테이블·응원은 정적인 예시 데이터입니다.
 결과 발표 타이머는 `src/utils/countdown.ts`의 `ANNOUNCEMENT_AT`을 기준으로 실시간 동작합니다.
@@ -95,12 +95,23 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 알림, 신청, 타임테이블, 응원, 지도, 분실물 버튼은 안내 창을 열고 실제 신청이나 전송은 하지 않습니다.
 안내 창은 닫기 버튼, Escape 키, 바깥 영역 클릭으로 닫을 수 있습니다.
 
-제공된 로고는 `src/assets/mainlogo.png`, 나머지 이미지는 `src/assets/Main/`을 사용합니다.
+제공된 로고는 `src/assets/mainlogo.svg`, 나머지 이미지는 `src/assets/Main/`의 SVG를 사용합니다.
 인스타팅 제목의 Rubik One은 [Google Fonts 원본](https://github.com/google/fonts/tree/main/ofl/rubikone)을
 `src/assets/fonts/`에 라이선스와 함께 보관합니다. PWA 사전 캐시에 폰트도 포함됩니다.
-배너 외의 글꼴은 `src/index.css`에서 Pretendard로 통일합니다.
+배너 외의 글꼴은 `index.html`의 Tailwind 클래스로 Pretendard를 지정합니다.
 [Pretendard 공식 배포본](https://github.com/orioncactus/pretendard/tree/v1.3.9)의 가변 폰트와
 라이선스도 같은 폴더에 포함해 외부 CDN 없이 사용할 수 있습니다.
+
+### Tailwind 스타일 관리
+
+직접 작성한 CSS 파일은 없습니다. `src/main.tsx`에서 Tailwind 패키지의 기본 스타일을
+가져오며, 화면 스타일은 컴포넌트의 유틸리티 클래스로 지정합니다.
+`src/layout/layoutTokens.ts`에서 최대 너비(480px)와 공통 패딩(20px)을 관리합니다.
+패딩 없는 영역은 AppLayout의 `padded={false}`를 사용하고, 일반 페이지 안에서만
+전체 너비가 필요하면 `w-[calc(100%+2*var(--app-content-padding))] -mx-(--app-content-padding)`를 사용합니다.
+로컬 글꼴은 `src/fonts.ts`의 FontFace API로 등록합니다. 숫자와 반지 애니메이션은
+`src/hooks/useMotion.ts`에서 Web Animations API로 실행하며 모션 줄이기 설정을 따릅니다.
+작은 설명·날짜와 섹션 제목은 약 2px 키우고, 배너의 초소형 문구는 10~12px로 조정했습니다.
 
 ## 기존 Web Push 구현
 
