@@ -85,13 +85,22 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 
 `src/pages/Main.css`에서 메인 스타일을 관리합니다. 타임테이블 포스터와 응원 목록은
 가로로 스크롤할 수 있으며, 나머지 페이지는 세로 스크롤을 사용합니다.
-현재 공연 안내·남은 시간·타임테이블·응원은 정적인 예시 데이터입니다.
+공연 안내·타임테이블·응원은 정적인 예시 데이터입니다.
+결과 발표 타이머는 `src/utils/countdown.ts`의 `ANNOUNCEMENT_AT`을 기준으로 실시간 동작합니다.
+현재 기준은 **2026년 10월 2일 오전 11시(한국 시간)**이며, 일·시간·분·초를 표시합니다.
+백그라운드에서 돌아오면 실제 시각으로 보정하고, 예정 시간이 지나면 0에서 멈춥니다.
+이 타이머는 발표 시각만 안내하며 결과 공개 여부를 서버에서 확인하는 기능은 아닙니다.
+숫자 전환과 반지 움직임은 기기의 모션 줄이기 설정을 따릅니다.
+`npm run test:countdown`으로 날짜·시간 경계와 종료 처리를 검증할 수 있습니다.
 알림, 신청, 타임테이블, 응원, 지도, 분실물 버튼은 안내 창을 열고 실제 신청이나 전송은 하지 않습니다.
 안내 창은 닫기 버튼, Escape 키, 바깥 영역 클릭으로 닫을 수 있습니다.
 
 제공된 로고는 `src/assets/mainlogo.png`, 나머지 이미지는 `src/assets/Main/`을 사용합니다.
 인스타팅 제목의 Rubik One은 [Google Fonts 원본](https://github.com/google/fonts/tree/main/ofl/rubikone)을
 `src/assets/fonts/`에 라이선스와 함께 보관합니다. PWA 사전 캐시에 폰트도 포함됩니다.
+배너 외의 글꼴은 `src/index.css`에서 Pretendard로 통일합니다.
+[Pretendard 공식 배포본](https://github.com/orioncactus/pretendard/tree/v1.3.9)의 가변 폰트와
+라이선스도 같은 폴더에 포함해 외부 CDN 없이 사용할 수 있습니다.
 
 ## 기존 Web Push 구현
 
