@@ -1,0 +1,51 @@
+.splash {
+  position: fixed;
+  inset: 0 auto auto 50%;
+  z-index: 100;
+  width: min(100%, var(--app-max-width));
+  height: 100dvh;
+  overflow: hidden;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #2451f5 0%, #376ff7 38.46%, #8bd5ff 100%);
+  opacity: 1;
+  transition: opacity var(--splash-fade-duration) ease-out;
+}
+
+.splash--exiting {
+  opacity: 0;
+}
+
+.splash-artwork {
+  position: absolute;
+  inset: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+}
+
+.splash-logo,
+.splash-mascot {
+  position: absolute;
+  left: 50%;
+  display: block;
+  height: auto;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.splash-logo {
+  top: 32%;
+  width: 78%;
+  max-height: 16%;
+}
+
+.splash-mascot {
+  top: 67.2%;
+  width: 91%;
+  max-height: 38%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    transition: none;
+  }
+}
