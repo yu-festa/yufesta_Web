@@ -67,7 +67,7 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 
 - `src/pages/Splash.tsx`: 이미지와 표시 시간, 종료 처리, 기기 상단 테마 색상
 - `src/pages/Splash.css`: 지정된 그라데이션, 반응형 이미지 배치, 모션 줄이기 설정
-- `src/pages/Main.tsx`: 공통 AppLayout을 사용하는 메인 기본 화면
+- `src/pages/Main.tsx`: 공연 안내, 인스타팅 배너, 타임테이블, 응원, 지도·분실물 바로가기
 - `src/assets/Splash/`: 제공된 SplashLogo.svg와 YUICON.svg 원본
 
 스플래시도 공통 최대 너비 480px를 사용하며, 넓은 화면에서는 가운데에 배치됩니다.
@@ -77,9 +77,21 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 ### 확인 방법
 
 1. `npm run dev`로 실행하고 새로고침하여 스플래시의 이미지와 그라데이션을 확인합니다.
-2. 이미지 준비 후 약 2.2초 뒤 스플래시가 사라지고 메인 제목이 표시되는지 확인합니다.
+2. 이미지 준비 후 약 2.2초 뒤 스플래시가 사라지고 메인 홈 화면이 표시되는지 확인합니다.
 3. 320px, 390px, 480px, 768px, 1440px에서 잘림과 가로 스크롤이 없는지 확인합니다.
 4. `npm run build`와 `npm run lint`를 실행합니다.
+
+## Main 홈 화면
+
+`src/pages/Main.css`에서 메인 스타일을 관리합니다. 타임테이블 포스터와 응원 목록은
+가로로 스크롤할 수 있으며, 나머지 페이지는 세로 스크롤을 사용합니다.
+현재 공연 안내·남은 시간·타임테이블·응원은 정적인 예시 데이터입니다.
+알림, 신청, 타임테이블, 응원, 지도, 분실물 버튼은 안내 창을 열고 실제 신청이나 전송은 하지 않습니다.
+안내 창은 닫기 버튼, Escape 키, 바깥 영역 클릭으로 닫을 수 있습니다.
+
+제공된 로고는 `src/assets/mainlogo.png`, 나머지 이미지는 `src/assets/Main/`을 사용합니다.
+인스타팅 제목의 Rubik One은 [Google Fonts 원본](https://github.com/google/fonts/tree/main/ofl/rubikone)을
+`src/assets/fonts/`에 라이선스와 함께 보관합니다. PWA 사전 캐시에 폰트도 포함됩니다.
 
 ## 기존 Web Push 구현
 
