@@ -13,7 +13,7 @@ const ringTiming = { duration: 5000, iterations: Infinity, easing: 'ease-in-out'
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff]'
 const sectionLinkClass = 'flex min-h-9 w-full items-center justify-between gap-3 text-left text-[21px] leading-snug font-bold tracking-[-0.65px] [&>svg]:size-5 [&>svg]:shrink-0'
 
-const shortcutClass = 'grid min-h-28 w-full grid-cols-[28px_minmax(0,1fr)_86px] items-start gap-3 rounded-[10px] border px-5 py-5 text-left [&>svg]:mt-0.5 [&>svg]:size-6 [&>svg]:text-[#1554ff] [&_h2]:text-[21px] [&_h2]:leading-snug [&_h2]:font-bold [&_h2]:tracking-[-0.6px] [&_p]:mt-3 [&_p]:text-[11px] [&_p]:leading-relaxed [&_p]:break-keep [&_p]:text-[#858585] [&>img]:-my-1.5 [&>img]:h-20 [&>img]:w-[86px] [&>img]:self-center [&>img]:object-contain @max-[320px]:grid-cols-[24px_minmax(0,1fr)_62px] @max-[320px]:gap-2 @max-[320px]:px-3.5 @max-[320px]:[&>img]:w-[62px]'
+const shortcutClass = 'grid min-h-28 w-full grid-cols-[28px_minmax(0,1fr)_86px] items-start gap-3 rounded-[10px] border px-5 py-5 text-left [&>svg]:mt-0.5 [&>svg]:size-6 [&>svg]:text-[#1554ff] [&>img]:-my-1.5 [&>img]:h-20 [&>img]:w-[86px] [&>img]:self-center [&>img]:object-contain @max-[320px]:grid-cols-[24px_minmax(0,1fr)_62px] @max-[320px]:gap-2 @max-[320px]:px-3.5 @max-[320px]:[&>img]:w-[62px]'
 
 const iconPaths = {
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 9h18c0-1-3-2-3-9Z" /><path d="M10 21h4" /></>,
@@ -60,39 +60,39 @@ export default function Main() {
       </div>
     }>
       <div className="@container pb-5 text-[#111] [&_button]:cursor-pointer [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-[#1554ff]">
-        <h1 className="sr-only">YU FESTA 메인</h1>
+        <span role="heading" aria-level={1} className="sr-only font-bold">YU FESTA 메인</span>
 
-        <div className="flex min-h-10 items-center gap-3 rounded-[10px] bg-[#f5f5f5] px-3.5 py-2.5 [&>svg]:size-[19px] [&>svg]:shrink-0 [&>svg]:text-[#63708a] [&>p]:text-[13px] [&>p]:leading-normal [&_strong]:mr-1 [&_strong]:font-bold [&_strong]:text-[#1554ff]" aria-label="공연 안내 예시">
+        <div className="flex min-h-10 items-center gap-3 rounded-[10px] bg-[#f5f5f5] px-3.5 py-2.5 [&>svg]:size-[19px] [&>svg]:shrink-0 [&>svg]:text-[#63708a]" aria-label="공연 안내 예시">
           <Icon name="speaker" />
           <p><strong>예사카락</strong>의 공연까지 <strong>5</strong>분 남았어요!</p>
         </div>
 
-        <section data-testid="instating-banner" className="relative isolate mt-4 min-h-42 overflow-hidden rounded-lg border border-white/40 bg-[linear-gradient(180deg,#779DF9_0%,#1353F2_100%)] px-6 pt-4 pb-4 font-[Arial,sans-serif] text-white shadow-[inset_0_1px_1px_#ffffffa6,inset_0_-3px_6px_#0b36b044,0_8px_20px_-10px_#1353f27a] before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[linear-gradient(125deg,#ffffff42_0%,#ffffff09_32%,transparent_33%,#ffffff10_53%,transparent_54%)] after:pointer-events-none after:absolute after:-top-[55px] after:-right-[35px] after:-z-10 after:size-45 after:rounded-full after:border after:border-white/15 after:bg-[radial-gradient(circle_at_35%_35%,#d7f6ff66,#b2d9ff15_52%,transparent_70%)] @max-[320px]:px-4" aria-labelledby="instating-title">
+        <section data-testid="instating-banner" className="relative isolate mt-4 min-h-42 overflow-hidden rounded-lg border border-white/40 bg-[linear-gradient(180deg,#779DF9_0%,#1353F2_100%)] px-6 pt-4 pb-4 text-white shadow-[inset_0_1px_1px_#ffffffa6,inset_0_-3px_6px_#0b36b044,0_8px_20px_-10px_#1353f27a] before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[linear-gradient(125deg,#ffffff42_0%,#ffffff09_32%,transparent_33%,#ffffff10_53%,transparent_54%)] after:pointer-events-none after:absolute after:-top-[55px] after:-right-[35px] after:-z-10 after:size-45 after:rounded-full after:border after:border-white/15 after:bg-[radial-gradient(circle_at_35%_35%,#d7f6ff66,#b2d9ff15_52%,transparent_70%)] @max-[320px]:px-4" aria-labelledby="instating-title">
           <img ref={ringRef} data-testid="banner-ring" className="absolute top-4 right-[13px] -z-10 h-auto w-[27%] object-contain [filter:drop-shadow(0_10px_7px_#08267d55)_drop-shadow(0_-2px_5px_#e3ffff55)]" src={ring} width="100" height="80" alt="" />
           <div className="flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-white/25 [&>span]:bg-white/15 [&>span]:px-2 [&>span]:py-0.5 [&>span]:shadow-[inset_0_1px_0_#ffffff45] [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span>● 신청 현황</span></div>
-          <h2 id="instating-title" className="relative mt-1 w-max max-w-full font-['Rubik_One',sans-serif] text-[clamp(20px,8cqw,32px)] leading-[1.3] font-normal tracking-[-0.4px] whitespace-nowrap">INSTA - TING</h2>
-          <p className="relative mt-1.5 max-w-[76%] text-[11px] leading-relaxed text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</p>
+          <span role="heading" aria-level={2} id="instating-title" className="relative block mt-1 w-max max-w-full font-['Rubik_One',sans-serif] text-[clamp(20px,8cqw,32px)] leading-[1.3] font-normal tracking-[-0.4px] whitespace-nowrap">INSTA - TING</span>
+          <span className="block font-normal relative mt-1.5 max-w-[76%] text-[11px] leading-relaxed text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</span>
           <AnnouncementCountdown />
           <button className="mt-3 flex min-h-8 items-center gap-1.5 rounded-full border border-white/70 bg-linear-to-b from-white to-[#e8f1ff] px-4 py-1.5 text-xs font-bold text-[#1554ff] shadow-[inset_0_1px_0_#fff,0_3px_7px_#123dab33] [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
-          <p className="text-sm leading-relaxed text-[#777]">공연 라인업과 시간을 알려드려요</p>
-          <h2 id="timetable-title"><button className={sectionLinkClass} onClick={() => setActivePanel('timetable')}><span>타임테이블 확인하기</span><Icon name="arrow" /></button></h2>
+          <span className="block font-normal text-sm leading-relaxed text-[#777]">공연 라인업과 시간을 알려드려요</span>
+          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('timetable')}><span>타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 타임테이블 예시 목록" tabIndex={0}>
             {demoPerformances.map(performance => (
-              <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover [&>h3]:mt-2 [&>h3]:text-[15px] [&>h3]:leading-snug [&>h3]:font-normal [&>h3]:tracking-[-0.35px] [&>h3]:[overflow-wrap:normal] [&>p]:mt-3.5 [&>p]:text-[13px] [&>p]:leading-normal [&>p]:whitespace-nowrap [&>p]:text-[#858585]" key={performance.id} onClick={() => setActivePanel('timetable')}>
+              <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={() => setActivePanel('timetable')}>
                 <img src={timeTableDemo} width="132" height="176" alt="" />
-                <h3>{performance.title}</h3>
-                <p>{performance.date}</p>
+                <span role="heading" aria-level={3} className="mt-2 block text-[15px] leading-snug font-medium tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
+                <span className="mt-3.5 block text-[13px] leading-normal font-normal whitespace-nowrap text-[#858585]">{performance.date}</span>
               </button>
             ))}
           </div>
         </section>
 
         <section className="mt-10" aria-labelledby="cheers-title">
-          <p className="text-sm leading-relaxed text-[#777]">함께 만드는 축제의 순간</p>
-          <h2 id="cheers-title"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span>축제를 향한 응원</span><Icon name="arrow" /></button></h2>
+          <span className="block font-normal text-sm leading-relaxed text-[#777]">함께 만드는 축제의 순간</span>
+          <span role="heading" aria-level={2} id="cheers-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span>축제를 향한 응원</span><Icon name="arrow" /></button></span>
           <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
             {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
           </ul>
@@ -112,10 +112,10 @@ export default function Main() {
         </nav>
 
         <dialog ref={dialogRef} className="fixed inset-0 m-auto max-h-[calc(100dvh-48px)] w-[min(440px,calc(100%-40px))] rounded-[20px] border-0 bg-white p-0 text-[#17233f] shadow-[0_20px_80px_#14234433] backdrop:bg-[#11182766]" aria-labelledby="home-dialog-title" aria-describedby="home-dialog-description" onClose={() => setActivePanel(null)} onClick={event => { if (event.target === event.currentTarget) dialogRef.current?.close() }}>
-          <div className="relative px-6 py-8 [&>h2]:pr-7 [&>h2]:text-2xl [&>h2]:font-bold [&>p]:mt-4 [&>p]:text-base [&>p]:leading-relaxed [&>p]:break-keep [&>p]:text-slate-500">
+          <div className="relative px-6 py-8">
             <button className={`${iconButtonClass} absolute top-2 right-2`} aria-label="닫기" onClick={() => dialogRef.current?.close()}><Icon name="close" /></button>
-            <h2 id="home-dialog-title">{activePanel && panels[activePanel].title}</h2>
-            <p id="home-dialog-description">{activePanel && panels[activePanel].description}</p>
+            <span role="heading" aria-level={2} id="home-dialog-title" className="block pr-7 text-2xl font-bold">{activePanel && panels[activePanel].title}</span>
+            <span id="home-dialog-description" className="mt-4 block text-base leading-relaxed font-normal break-keep text-slate-500">{activePanel && panels[activePanel].description}</span>
             {activePanel === 'timetable' && <img className="mx-auto mt-6 block w-45 max-w-full" src={timeTableDemo} alt="예시 공연 COUNTDOWN FANTASY 2025-2026 포스터" />}
           </div>
         </dialog>
