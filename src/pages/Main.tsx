@@ -64,7 +64,7 @@ export default function Main() {
 
         <div className="flex min-h-10 items-center gap-3 rounded-[10px] bg-[#f5f5f5] px-3.5 py-2.5 [&>svg]:size-[19px] [&>svg]:shrink-0 [&>svg]:text-[#63708a]" aria-label="공연 안내 예시">
           <Icon name="speaker" />
-          <p><strong>예사카락</strong>의 공연까지 <strong>5</strong>분 남았어요!</p>
+          <span><span className="font-bold text-[#1353f2]">예사가락</span><span className="font-medium"> 의 공연까지 </span><span className="font-bold text-[#1353f2]">5</span>분<span className="font-medium"> 남았어요!</span></span>
         </div>
 
         <section data-testid="instating-banner" className="relative isolate mt-4 min-h-42 overflow-hidden rounded-lg border border-white/40 bg-[linear-gradient(180deg,#779DF9_0%,#1353F2_100%)] px-6 pt-4 pb-4 text-white shadow-[inset_0_1px_1px_#ffffffa6,inset_0_-3px_6px_#0b36b044,0_8px_20px_-10px_#1353f27a] before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[linear-gradient(125deg,#ffffff42_0%,#ffffff09_32%,transparent_33%,#ffffff10_53%,transparent_54%)] after:pointer-events-none after:absolute after:-top-[55px] after:-right-[35px] after:-z-10 after:size-45 after:rounded-full after:border after:border-white/15 after:bg-[radial-gradient(circle_at_35%_35%,#d7f6ff66,#b2d9ff15_52%,transparent_70%)] @max-[320px]:px-4" aria-labelledby="instating-title">
