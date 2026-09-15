@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:push": "node --test tests/push-test.test.ts"
+    "test:push": "node --test tests/push-test.test.ts",
+    "test:countdown": "node --test tests/countdown.test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
