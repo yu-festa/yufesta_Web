@@ -51,9 +51,9 @@ export default function AnnouncementCountdown() {
       </div>
       <div className="flex items-center justify-between gap-1 border-l border-white/20 pl-2 @max-[320px]:gap-0.5 @max-[320px]:pl-1.5" aria-hidden="true">
         {units.map(unit => (
-          <div className="flex shrink-0 items-center gap-0.5" data-testid="countdown-unit" key={unit.label}>
+          <div className="flex shrink-0 items-end gap-0.5" data-testid="countdown-unit" key={unit.label}>
             <span className="block overflow-hidden rounded bg-white/6 shadow-[inset_0_1px_0_#ffffff21] perspective-[180px]"><AnimatedNumber value={unit.value} /></span>
-            <span className="text-[10px] leading-snug whitespace-nowrap text-[#e2edff]">{unit.label}</span>
+            <span className="pb-1 text-[10px] leading-snug whitespace-nowrap text-[#e2edff]">{unit.label}</span>
           </div>
         ))}
       </div>
