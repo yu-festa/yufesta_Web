@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
 import { ANNOUNCEMENT_TIMESTAMP, getCountdown } from '../utils/countdown'
+import { useMotion } from '../hooks/useMotion'
+
+const digitFrames = [
+  { opacity: .3, transform: 'translateY(-5px) rotateX(55deg)' },
+  { opacity: 1, transform: 'translateY(0) rotateX(0)' },
+]
+const digitTiming = { duration: 380, easing: 'cubic-bezier(.2, .7, .3, 1)' }
+
+function AnimatedNumber({ value }: { value: number }) {
+  const ref = useMotion<HTMLElement>(digitFrames, digitTiming, value)
+  return <b ref={ref} className="block py-0.5 font-['Rubik_One',sans-serif] text-[clamp(15px,4.5cqw,20px)] leading-[1.3] font-normal tabular-nums">{String(value).padStart(2, '0')}</b>
+}
 
 const announcementLabel = new Intl.DateTimeFormat('ko-KR', {
   timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
@@ -32,16 +44,16 @@ export default function AnnouncementCountdown() {
   ]
 
   return (
-    <div className="instating-countdown" role="timer" aria-live="off" aria-label={remaining.ended ? '결과 발표 예정 시간이 되었습니다' : `1차 결과 발표까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
-      <div className="countdown-caption">
-        <strong>{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</strong>
-        <time dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
+    <div className="mt-3 grid min-h-16 w-[min(100%,340px)] grid-cols-[minmax(0,.95fr)_minmax(0,1.4fr)] items-center gap-2 rounded-[9px] border border-[#c4ddff66] bg-[linear-gradient(115deg,#1644b94d,#ffffff24)] px-2.5 py-2 shadow-[inset_0_1px_0_#ffffff55,inset_0_-1px_0_#1538a02b,0_5px_12px_#0e329d26] backdrop-blur-md @max-[320px]:gap-1.5 @max-[320px]:px-2" role="timer" aria-live="off" aria-label={remaining.ended ? '결과 발표 예정 시간이 되었습니다' : `1차 결과 발표까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
+      <div>
+        <strong className="block text-xs leading-normal font-semibold break-keep">{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</strong>
+        <time className="mt-1 block text-[10px] leading-normal text-[#e2edff]" dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
       </div>
-      <div className="countdown-units" aria-hidden="true">
+      <div className="grid grid-cols-4 gap-1 border-l border-white/20 pl-2 @max-[320px]:gap-0.5 @max-[320px]:pl-1.5" aria-hidden="true">
         {units.map(unit => (
-          <div className="countdown-unit" key={unit.label}>
-            <span className="countdown-number"><b key={unit.value}>{String(unit.value).padStart(2, '0')}</b></span>
-            <span className="countdown-label">{unit.label}</span>
+          <div className="min-w-0 text-center" data-testid="countdown-unit" key={unit.label}>
+            <span className="block overflow-hidden rounded bg-white/6 shadow-[inset_0_1px_0_#ffffff21] perspective-[180px]"><AnimatedNumber value={unit.value} /></span>
+            <span className="mt-0.5 block text-[10px] leading-snug text-[#e2edff]">{unit.label}</span>
           </div>
         ))}
       </div>
