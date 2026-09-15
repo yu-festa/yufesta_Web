@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
+import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import mainLogo from '../assets/mainlogo.png'
 import timeTableDemo from '../assets/Main/TimeTableDemo.png'
 import ring from '../assets/Main/Ring.png'
@@ -63,10 +64,7 @@ export default function Main() {
           <div className="instating-tags"><span>1차 / 추첨</span><span>● 신청 현황</span></div>
           <h2 id="instating-title">INSTA - TING</h2>
           <p className="instating-description">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</p>
-          <div className="instating-countdown" aria-label="결과 발표까지 남은 시간 예시: 1시간 24분 38초">
-            <div><strong>1차 결과 발표까지</strong><span>오전 11:00 발표</span></div>
-            <p><b>01</b><i>:</i><b>24</b><i>:</i><b>38</b></p>
-          </div>
+          <AnnouncementCountdown />
           <button className="instating-apply" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
         </section>
 
