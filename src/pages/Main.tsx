@@ -71,29 +71,29 @@ export default function Main() {
           <img ref={ringRef} data-testid="banner-ring" className="absolute top-4 right-[13px] -z-10 h-auto w-[27%] object-contain [filter:drop-shadow(0_10px_7px_#08267d55)_drop-shadow(0_-2px_5px_#e3ffff55)]" src={ring} width="100" height="80" alt="" />
           <div className="flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-white/25 [&>span]:bg-white/15 [&>span]:px-2 [&>span]:py-0.5 [&>span]:shadow-[inset_0_1px_0_#ffffff45] [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span className="inline-flex items-center gap-1"><span className="text-[6px] leading-none" aria-hidden="true">●</span><span>신청 현황</span></span></div>
           <span role="heading" aria-level={2} id="instating-title" className="relative block mt-1 w-max max-w-full font-['Rubik_One',sans-serif] text-[clamp(20px,8cqw,32px)] leading-[1.3] font-normal tracking-[-0.4px] whitespace-nowrap">INSTA - TING</span>
-          <span className="block font-normal relative mt-1.5 max-w-[76%] text-[11px] leading-relaxed text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</span>
+          <span className="block font-medium relative mt-1.5 max-w-[76%] text-[12px] leading-relaxed text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</span>
           <AnnouncementCountdown />
           <button className="mt-3 flex min-h-8 items-center gap-1.5 rounded-full border border-white/70 bg-linear-to-b from-white to-[#e8f1ff] px-4 py-1.5 text-xs font-bold text-[#1554ff] shadow-[inset_0_1px_0_#fff,0_3px_7px_#123dab33] [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
-          <span className="block font-normal text-sm leading-relaxed text-[#777]">공연 라인업과 시간을 알려드려요</span>
-          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('timetable')}><span>타임테이블 확인하기</span><Icon name="arrow" /></button></span>
+          <span className="block font-medium text-[#777] text-[15px]">공연 라인업과 시간을 알려드려요</span>
+          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('timetable')}><span className="font-bold text-2xl">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 타임테이블 예시 목록" tabIndex={0}>
             {demoPerformances.map(performance => (
               <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={() => setActivePanel('timetable')}>
                 <img src={timeTableDemo} width="132" height="176" alt="" />
-                <span role="heading" aria-level={3} className="mt-2 block text-[15px] leading-snug font-medium tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
-                <span className="mt-3.5 block text-[13px] leading-normal font-normal whitespace-nowrap text-[#858585]">{performance.date}</span>
+                <span role="heading" aria-level={3} className="mt-2 block text-[16px] leading-snug font-semibold tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
+                <span className="mt-3.5 block text-[15px] leading-normal font-medium whitespace-nowrap text-[#858585]">{performance.date}</span>
               </button>
             ))}
           </div>
         </section>
 
         <section className="mt-10" aria-labelledby="cheers-title">
-          <span className="block font-normal text-sm leading-relaxed text-[#777]">함께 만드는 축제의 순간</span>
-          <span role="heading" aria-level={2} id="cheers-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span>축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
+          <span className="block font-medium text-[#777] text-[15px]">함께 만드는 축제의 순간</span>
+          <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span className="font-bold text-2xl">축제를 향한 응원</span><Icon name="arrow" /></button></span>
+          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x- auto rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
             {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
           </ul>
         </section>
@@ -101,12 +101,12 @@ export default function Main() {
         <nav className="mt-12 grid gap-6" aria-label="축제 이용 안내">
           <button className={`${shortcutClass} border-transparent bg-[#f0f4ff]`} onClick={() => setActivePanel('map')}>
             <Icon name="pin" />
-            <div><span className="font-bold text-xl">축제 지도</span><p>공연장부터 화장실 위치까지,<br />필요한 장소를 확인해보세요</p></div>
-            <img src={map} width="77" height="74" alt="" />
+            <div className="flex flex-col gap-2"><span className="font-bold text-xl">축제 지도</span><span className="text-[13px] text-[#B4B4B4]">공연장부터 화장실 위치까지,<br />필요한 장소를 확인해보세요</span></div>
+            <img src={map} width="90" height="4" alt="" />
           </button>
           <button className={`${shortcutClass} border-[#d5e0ff] bg-white`} onClick={() => setActivePanel('lost')}>
             <Icon name="search" />
-            <div><h2>분실물 확인</h2><p>잃어버린 물건 또는 주인 없는 물건이 있나요?<br />글을 남겨 물건을 찾아 보세요!</p></div>
+            <div className="flex flex-col gap-2"><span className="font-bold text-xl">분실물 확인</span><span className="text-[12px] text-[#B4B4B4]">잃어버린 물건 또는 주인 없는 물건이 있나요?<br />글을 남겨 물건을 찾아 보세요!</span></div>
             <img src={find} width="77" height="74" alt="" />
           </button>
         </nav>
