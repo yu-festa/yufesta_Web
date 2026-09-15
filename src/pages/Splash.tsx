@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
 import splashLogo from '../assets/Splash/SplashLogo.svg'
 import yuIcon from '../assets/Splash/YUICON.svg'
-import './Splash.css'
 
 // 이미지가 준비된 뒤 표시할 시간과 사라지는 시간을 한 곳에서 관리합니다.
 const SPLASH_HOLD_MS = 1800
@@ -55,14 +53,15 @@ export default function Splash({ onComplete }: SplashProps) {
 
   return (
     <div
-      className={`splash${isExiting ? ' splash--exiting' : ''}`}
-      style={{ '--splash-fade-duration': `${SPLASH_FADE_MS}ms` } as CSSProperties}
+      data-testid="splash"
+      className={`fixed top-0 left-1/2 z-100 h-dvh w-[min(100%,var(--app-max-width))] -translate-x-1/2 overflow-hidden bg-[linear-gradient(180deg,#2451F5_0%,#376FF7_38.46%,#8BD5FF_100%)] transition-opacity ease-out motion-reduce:transition-none ${isExiting ? 'opacity-0' : 'opacity-100'}`}
+      style={{ transitionDuration: `${SPLASH_FADE_MS}ms` }}
       role="status"
       aria-label="YU FESTA 시작 화면"
     >
-      <div className="splash-artwork">
-        <img className="splash-logo" src={splashLogo} width="294" height="98" alt="YU FESTA" fetchPriority="high" />
-        <img className="splash-mascot" src={yuIcon} width="344" height="266" alt="" fetchPriority="high" />
+      <div className="absolute inset-x-0 top-[env(safe-area-inset-top,0px)] bottom-[env(safe-area-inset-bottom,0px)]">
+        <img className="absolute top-[32%] left-1/2 block h-auto max-h-[16%] w-[78%] -translate-1/2 object-contain select-none" src={splashLogo} width="294" height="98" alt="YU FESTA" fetchPriority="high" draggable={false} />
+        <img className="absolute top-[67.2%] left-1/2 block h-auto max-h-[38%] w-[91%] -translate-1/2 object-contain select-none" src={yuIcon} width="344" height="266" alt="" fetchPriority="high" draggable={false} />
       </div>
     </div>
   )
