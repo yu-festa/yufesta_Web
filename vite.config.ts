@@ -47,7 +47,7 @@ export default defineConfig({
         importScripts: ['push-sw.js'],
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2,ttf}'],
         cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/api(?:\/|$)/],
       },
