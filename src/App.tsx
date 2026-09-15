@@ -1,11 +1,18 @@
-import AppLayout from './layout/AppLayout'
-import PushNotificationTest from './PushNotificationTest'
+import { useCallback, useState } from 'react'
+import Main from './pages/Main'
+import Splash from './pages/Splash'
 
 const App = () => {
+  const [showSplash, setShowSplash] = useState(true)
+  const completeSplash = useCallback(() => setShowSplash(false), [])
+
   return (
-    <AppLayout header={<div className="flex h-16 items-center text-lg font-bold">YU FESTA</div>}>
-      <PushNotificationTest />
-    </AppLayout>
+    <>
+      <div inert={showSplash} aria-hidden={showSplash || undefined}>
+        <Main />
+      </div>
+      {showSplash && <Splash onComplete={completeSplash} />}
+    </>
   )
 }
 
