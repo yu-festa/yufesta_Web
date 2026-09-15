@@ -98,7 +98,8 @@ Service Workers를 확인할 수 있습니다. 첫 방문 후 서비스 워커 �
 제공된 로고는 `src/assets/mainlogo.svg`, 나머지 이미지는 `src/assets/Main/`의 SVG를 사용합니다.
 인스타팅 제목의 Rubik One은 [Google Fonts 원본](https://github.com/google/fonts/tree/main/ofl/rubikone)을
 `src/assets/fonts/`에 라이선스와 함께 보관합니다. PWA 사전 캐시에 폰트도 포함됩니다.
-배너 외의 글꼴은 `index.html`의 Tailwind 클래스로 Pretendard를 지정합니다.
+INSTA-TING 배너 제목만 Rubik One을 사용하며, 나머지 문구와 카운트다운 숫자는
+`index.html`의 Tailwind 클래스를 상속해 Pretendard를 사용합니다.
 [Pretendard 공식 배포본](https://github.com/orioncactus/pretendard/tree/v1.3.9)의 가변 폰트와
 라이선스도 같은 폴더에 포함해 외부 CDN 없이 사용할 수 있습니다.
 
