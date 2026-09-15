@@ -71,7 +71,7 @@ export default function Main() {
           <img ref={ringRef} data-testid="banner-ring" className="absolute top-4 right-[13px] -z-10 h-auto w-[27%] object-contain [filter:drop-shadow(0_10px_7px_#08267d55)_drop-shadow(0_-2px_5px_#e3ffff55)]" src={ring} width="100" height="80" alt="" />
           <div className="flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-white/25 [&>span]:bg-white/15 [&>span]:px-2 [&>span]:py-0.5 [&>span]:shadow-[inset_0_1px_0_#ffffff45] [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span className="inline-flex items-center gap-1"><span className="text-[6px] leading-none" aria-hidden="true">●</span><span>신청 현황</span></span></div>
           <span role="heading" aria-level={2} id="instating-title" className="relative block mt-1 w-max max-w-full font-['Rubik_One',sans-serif] text-[clamp(20px,8cqw,32px)] leading-[1.3] font-normal tracking-[-0.4px] whitespace-nowrap">INSTA - TING</span>
-          <span className="block font-medium relative mt-1.5 max-w-[76%] text-[12px] leading-relaxed text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께 즐겨보세요</span>
+          <span className="block font-medium relative mt-1.5 text-[12px] leading-relaxed break-keep text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께<br />즐겨보세요</span>
           <AnnouncementCountdown />
           <button className="mt-3 flex min-h-8 items-center gap-1.5 rounded-full border border-white/70 bg-linear-to-b from-white to-[#e8f1ff] px-4 py-1.5 text-xs font-bold text-[#1554ff] shadow-[inset_0_1px_0_#fff,0_3px_7px_#123dab33] [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
         </section>
@@ -83,8 +83,8 @@ export default function Main() {
             {demoPerformances.map(performance => (
               <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={() => setActivePanel('timetable')}>
                 <img src={timeTableDemo} width="132" height="176" alt="" />
-                <span role="heading" aria-level={3} className="mt-2 block text-[16px] leading-snug font-semibold tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
-                <span className="mt-3.5 block text-[15px] leading-normal font-medium whitespace-nowrap text-[#858585]">{performance.date}</span>
+                <span role="heading" aria-level={3} className="mt-2 block text-[14px] leading-snug font-semibold tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
+                <span className="mt-3.5 block text-[13px] leading-normal font-medium whitespace-nowrap text-[#858585]">{performance.date}</span>
               </button>
             ))}
           </div>
@@ -93,7 +93,7 @@ export default function Main() {
         <section className="mt-10" aria-labelledby="cheers-title">
           <span className="block font-medium text-[#777] text-[15px]">함께 만드는 축제의 순간</span>
           <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span className="font-bold text-2xl">축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x- auto rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
+          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
             {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
           </ul>
         </section>
