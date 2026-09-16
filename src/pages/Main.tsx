@@ -76,8 +76,8 @@ export default function Main({ onOpenTimetable }: { onOpenTimetable: () => void 
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
-          <span className="block font-medium text-[#777] text-[15px]">공연 라인업과 시간을 알려드려요</span>
-          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={onOpenTimetable}><span className="font-bold text-2xl">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
+          <span className="block font-medium text-[#777] text-[13px]">공연 라인업과 시간을 알려드려요</span>
+          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={onOpenTimetable}><span className="font-bold text-[20px]">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 타임테이블 예시 목록" tabIndex={0}>
             {demoPerformances.map(performance => (
               <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={onOpenTimetable}>
@@ -90,9 +90,9 @@ export default function Main({ onOpenTimetable }: { onOpenTimetable: () => void 
         </section>
 
         <section className="mt-10" aria-labelledby="cheers-title">
-          <span className="block font-medium text-[#777] text-[15px]">함께 만드는 축제의 순간</span>
-          <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span className="font-bold text-2xl">축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff]" aria-label="응원 메시지 예시">
+          <span className="block font-medium text-[#777] text-[13px]">함께 만드는 축제의 순간</span>
+          <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
+          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff] font-medium" aria-label="응원 메시지 예시">
             {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
           </ul>
         </section>
