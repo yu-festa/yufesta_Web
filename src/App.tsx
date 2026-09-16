@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Main from './pages/Main'
 import Splash from './pages/Splash'
 import Timetable from './pages/Timetable'
 import Cheers from './pages/Cheers'
 
-type Page = 'main' | 'timetable' | 'cheers'
+const FestivalMap = lazy(() => import('./pages/FestivalMap'))
+
+type Page = 'main' | 'timetable' | 'cheers' | 'map'
 
 function getPageFromHash(): Page {
   if (window.location.hash === '#timetable') return 'timetable'
   if (window.location.hash === '#cheers') return 'cheers'
+  if (window.location.hash === '#map') return 'map'
   return 'main'
 }
 
@@ -51,7 +54,8 @@ const App = () => {
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
         {page === 'timetable' && <Timetable onBack={closePage} />}
         {page === 'cheers' && <Cheers onBack={closePage} />}
-        {page === 'main' && <Main onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} />}
+        {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
+        {page === 'main' && <Main onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

@@ -36,12 +36,11 @@ const cheers = ['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
   instating: { title: 'INSTA - TING', description: '인스타팅 신청은 준비 중이에요. 신청 일정이 열리면 안내해 드릴게요.' },
-  map: { title: '축제 지도', description: '공연장과 부스 위치를 확인할 수 있는 지도를 준비 중이에요.' },
   lost: { title: '분실물 확인', description: '분실물 조회와 등록 기능을 준비 중이에요.' },
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onOpenTimetable, onOpenCheers }: { onOpenTimetable: () => void; onOpenCheers: () => void }) {
+export default function Main({ onOpenTimetable, onOpenCheers, onOpenMap }: { onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void }) {
   const ringRef = useMotion<HTMLImageElement>(ringFrames, ringTiming)
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -97,7 +96,7 @@ export default function Main({ onOpenTimetable, onOpenCheers }: { onOpenTimetabl
         </section>
 
         <nav className="mt-12 grid gap-6" aria-label="축제 이용 안내">
-          <button className={`${shortcutClass} border-transparent bg-[#f0f4ff]`} onClick={() => setActivePanel('map')}>
+          <button className={`${shortcutClass} border-transparent bg-[#f0f4ff]`} onClick={onOpenMap}>
             <Icon name="pin" />
             <div className="flex flex-col gap-2"><span className="font-bold text-xl">축제 지도</span><span className="text-[13px] text-[#B4B4B4]">공연장부터 화장실 위치까지,<br />필요한 장소를 확인해보세요</span></div>
             <img src={map} width="90" height="4" alt="" />
