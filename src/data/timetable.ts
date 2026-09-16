@@ -8,12 +8,13 @@ export type Performance = {
   start: string
   end: string
   highlight?: 'light' | 'blue'
+  isLive?: boolean
 }
 
 export const stages = ['LAND STAGE', 'LAND STAGE'] as const
 
 export const performances: Performance[] = [
-  { id: 'tensional', name: '텐셔널 순간들', stage: 0, start: '15:00', end: '15:40', highlight: 'light' },
+  { id: 'tensional', name: '텐셔널 순간들', stage: 0, start: '15:00', end: '15:40', highlight: 'light', isLive: true },
   { id: 'sawi', name: '사위', stage: 1, start: '15:45', end: '16:25', highlight: 'blue' },
   { id: 'green-flame', name: '초록불꽃소년단', stage: 0, start: '16:30', end: '17:10' },
   { id: 'the-chairs', name: 'THE CHAIRS', stage: 1, start: '17:15', end: '17:55' },
@@ -49,13 +50,15 @@ export const timetableHeight = timetableLayout.scheduleTop
   + (timetableLayout.end - timetableLayout.start) * timetableLayout.pixelsPerMinute + 20
 
 type Rectangle = { kind: 'rect'; x: number; y: number; width: number; height: number; fill: string; shadow?: boolean }
+type Circle = { kind: 'circle'; x: number; y: number; radius: number; fill: string }
 type Label = { kind: 'text'; x: number; y: number; text: string; size: number; weight: number; fill: string; anchor: 'middle' | 'end' }
-export type TimetableShape = Rectangle | Label
+export type TimetableShape = Rectangle | Circle | Label
 
 // 화면과 PDF가 같은 도형·좌표·텍스트를 사용합니다.
 export function getTimetableShapes(): TimetableShape[] {
   const { left, columnWidth, headerHeight, scheduleTop, pixelsPerMinute, start, end } = timetableLayout
   const shapes: TimetableShape[] = []
+  const liveBadges: TimetableShape[] = []
   stages.forEach((name, index) => {
     const x = left + index * columnWidth
     shapes.push({ kind: 'rect', x, y: 0, width: columnWidth, height: headerHeight, fill: index === 0 ? '#cddcff' : '#7d9dff' })
@@ -77,6 +80,13 @@ export function getTimetableShapes(): TimetableShape[] {
     shapes.push({ kind: 'text', x: centerX, y: centerY - 13, text: performance.name, size: performance.name.length > 20 ? 13 : 15, weight: 500, fill: '#111111', anchor: 'middle' })
     shapes.push({ kind: 'text', x: centerX, y: centerY + 5, text: `${performance.start}-${performance.end}`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
     shapes.push({ kind: 'text', x: centerX, y: centerY + 19, text: `(${duration}분)`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
+    if (performance.isLive) {
+      // 카드 오른쪽 위 모서리에 걸치되, 오른쪽 스테이지에서도 화면 안에 들어옵니다.
+      const badgeX = x + columnWidth - 2
+      const badgeY = y + 2
+      liveBadges.push({ kind: 'circle', x: badgeX, y: badgeY, radius: 16, fill: '#ff2028' })
+      liveBadges.push({ kind: 'text', x: badgeX, y: badgeY, text: 'LIVE', size: 11, weight: 700, fill: '#ffffff', anchor: 'middle' })
+    }
   }
-  return shapes
+  return [...shapes, ...liveBadges]
 }

@@ -4,7 +4,7 @@ import { festivalTitle, getTimetableShapes, timetableHeight, timetableLayout } f
 
 export async function downloadTimetablePdf() {
   // Canvas에 로컬 한글 글꼴을 렌더링해 PDF에서도 글자가 깨지지 않게 합니다.
-  await Promise.all([document.fonts.load('400 15px Pretendard'), document.fonts.load('500 15px Pretendard')])
+  await Promise.all([400, 500, 700].map(weight => document.fonts.load(`${weight} 15px Pretendard`)))
   const logo = new Image()
   logo.src = mainLogo
   await logo.decode()
@@ -41,6 +41,10 @@ export async function downloadTimetablePdf() {
         context.shadowOffsetY = 3 * scale
       }
       context.fillRect(shape.x, shape.y, shape.width, shape.height)
+    } else if (shape.kind === 'circle') {
+      context.beginPath()
+      context.arc(shape.x, shape.y, shape.radius, 0, Math.PI * 2)
+      context.fill()
     } else {
       context.font = `${shape.weight} ${shape.size}px Pretendard, sans-serif`
       context.textAlign = shape.anchor === 'middle' ? 'center' : 'right'
