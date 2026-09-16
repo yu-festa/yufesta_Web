@@ -2,15 +2,24 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import Main from './pages/Main'
 import Splash from './pages/Splash'
 import Timetable from './pages/Timetable'
+import Cheers from './pages/Cheers'
+
+type Page = 'main' | 'timetable' | 'cheers'
+
+function getPageFromHash(): Page {
+  if (window.location.hash === '#timetable') return 'timetable'
+  if (window.location.hash === '#cheers') return 'cheers'
+  return 'main'
+}
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true)
   const completeSplash = useCallback(() => setShowSplash(false), [])
-  const [showTimetable, setShowTimetable] = useState(() => window.location.hash === '#timetable')
+  const [page, setPage] = useState<Page>(getPageFromHash)
   const mainScrollRef = useRef(0)
 
   useEffect(() => {
-    const syncPage = () => setShowTimetable(window.location.hash === '#timetable')
+    const syncPage = () => setPage(getPageFromHash())
     window.addEventListener('popstate', syncPage)
     window.addEventListener('hashchange', syncPage)
     return () => {
@@ -20,27 +29,29 @@ const App = () => {
   }, [])
 
   useLayoutEffect(() => {
-    window.scrollTo(0, showTimetable ? 0 : mainScrollRef.current)
-  }, [showTimetable])
+    window.scrollTo(0, page === 'main' ? mainScrollRef.current : 0)
+  }, [page])
 
-  function openTimetable() {
+  function openPage(nextPage: Exclude<Page, 'main'>) {
     mainScrollRef.current = window.scrollY
-    window.history.pushState({ ...window.history.state, fromMain: true }, '', '#timetable')
-    setShowTimetable(true)
+    window.history.pushState({ ...window.history.state, fromMain: true }, '', `#${nextPage}`)
+    setPage(nextPage)
   }
 
-  function closeTimetable() {
+  function closePage() {
     if (window.history.state?.fromMain) window.history.back()
     else {
       window.history.replaceState(null, '', window.location.pathname + window.location.search)
-      setShowTimetable(false)
+      setPage('main')
     }
   }
 
   return (
     <>
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
-        {showTimetable ? <Timetable onBack={closeTimetable} /> : <Main onOpenTimetable={openTimetable} />}
+        {page === 'timetable' && <Timetable onBack={closePage} />}
+        {page === 'cheers' && <Cheers onBack={closePage} />}
+        {page === 'main' && <Main onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

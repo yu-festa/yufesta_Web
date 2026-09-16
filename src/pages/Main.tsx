@@ -36,13 +36,12 @@ const cheers = ['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
   instating: { title: 'INSTA - TING', description: '인스타팅 신청은 준비 중이에요. 신청 일정이 열리면 안내해 드릴게요.' },
-  cheers: { title: '축제를 향한 응원', description: '응원 메시지 작성은 준비 중이에요. 지금 보이는 메시지는 화면 예시예요.' },
   map: { title: '축제 지도', description: '공연장과 부스 위치를 확인할 수 있는 지도를 준비 중이에요.' },
   lost: { title: '분실물 확인', description: '분실물 조회와 등록 기능을 준비 중이에요.' },
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onOpenTimetable }: { onOpenTimetable: () => void }) {
+export default function Main({ onOpenTimetable, onOpenCheers }: { onOpenTimetable: () => void; onOpenCheers: () => void }) {
   const ringRef = useMotion<HTMLImageElement>(ringFrames, ringTiming)
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -91,7 +90,7 @@ export default function Main({ onOpenTimetable }: { onOpenTimetable: () => void 
 
         <section className="mt-10" aria-labelledby="cheers-title">
           <span className="block font-medium text-[#777] text-[13px]">함께 만드는 축제의 순간</span>
-          <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('cheers')}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
+          <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={onOpenCheers}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
           <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff] font-medium" aria-label="응원 메시지 예시">
             {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
           </ul>
