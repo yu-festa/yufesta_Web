@@ -36,14 +36,13 @@ const cheers = ['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
   instating: { title: 'INSTA - TING', description: '인스타팅 신청은 준비 중이에요. 신청 일정이 열리면 안내해 드릴게요.' },
-  timetable: { title: '타임테이블', description: '지금은 예시 공연을 보여드리고 있어요. 축제 라인업과 공연 시간은 추후 공개돼요.' },
   cheers: { title: '축제를 향한 응원', description: '응원 메시지 작성은 준비 중이에요. 지금 보이는 메시지는 화면 예시예요.' },
   map: { title: '축제 지도', description: '공연장과 부스 위치를 확인할 수 있는 지도를 준비 중이에요.' },
   lost: { title: '분실물 확인', description: '분실물 조회와 등록 기능을 준비 중이에요.' },
 }
 type Panel = keyof typeof panels
 
-export default function Main() {
+export default function Main({ onOpenTimetable }: { onOpenTimetable: () => void }) {
   const ringRef = useMotion<HTMLImageElement>(ringFrames, ringTiming)
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -78,10 +77,10 @@ export default function Main() {
 
         <section className="mt-7" aria-labelledby="timetable-title">
           <span className="block font-medium text-[#777] text-[15px]">공연 라인업과 시간을 알려드려요</span>
-          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={() => setActivePanel('timetable')}><span className="font-bold text-2xl">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
+          <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={onOpenTimetable}><span className="font-bold text-2xl">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 타임테이블 예시 목록" tabIndex={0}>
             {demoPerformances.map(performance => (
-              <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={() => setActivePanel('timetable')}>
+              <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={onOpenTimetable}>
                 <img src={timeTableDemo} width="132" height="176" alt="" />
                 <span role="heading" aria-level={3} className="mt-2 block text-[14px] leading-snug font-semibold tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
                 <span className="mt-3.5 block text-[13px] leading-normal font-medium whitespace-nowrap text-[#858585]">{performance.date}</span>
@@ -116,7 +115,6 @@ export default function Main() {
             <button className={`${iconButtonClass} absolute top-2 right-2`} aria-label="닫기" onClick={() => dialogRef.current?.close()}><Icon name="close" /></button>
             <span role="heading" aria-level={2} id="home-dialog-title" className="block pr-7 text-2xl font-bold">{activePanel && panels[activePanel].title}</span>
             <span id="home-dialog-description" className="mt-4 block text-base leading-relaxed font-normal break-keep text-slate-500">{activePanel && panels[activePanel].description}</span>
-            {activePanel === 'timetable' && <img className="mx-auto mt-6 block w-45 max-w-full" src={timeTableDemo} alt="예시 공연 COUNTDOWN FANTASY 2025-2026 포스터" />}
           </div>
         </dialog>
       </div>
