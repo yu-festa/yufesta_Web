@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { watchCurrentLocation } from '../src/utils/location.ts'

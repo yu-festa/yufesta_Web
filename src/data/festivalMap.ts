@@ -1,3 +1,5 @@
+import { restroomBuildings, restroomDetailLevel, restroomSources } from './restrooms.ts'
+
 export type PlaceCategory = 'stage' | 'restroom' | 'delivery'
 export type MapFilter = 'all' | PlaceCategory
 export type Coordinates = [latitude: number, longitude: number]
@@ -10,9 +12,8 @@ export const mapCategories = [
 ] as const
 
 export const mapSources = {
-  campus: { label: '영남대학교 공식 캠퍼스맵', url: 'https://www.yu.ac.kr/main/intro/campus-map.do' },
+  ...restroomSources,
   festival: { label: '영대신문 · 2025 천마대동제', url: 'https://yumedia.yu.ac.kr/news/articleView.html?idxno=23455' },
-  restroom: { label: '영대신문 · 교내 화장실 안내', url: 'https://yumedia.yu.ac.kr/news/articleView.html?idxno=23152' },
 } as const
 
 export interface FestivalPlace {
@@ -45,27 +46,11 @@ export const festivalPlaces: FestivalPlace[] = [
     description: '2025 천마대동제 버스킹이 진행된 시계탑 인근 구역이에요. 핀은 시계탑의 대표 위치를 표시해요.',
     source: 'festival',
   },
-  {
-    id: 'student-center-restroom', category: 'restroom', name: '학생회관 화장실',
-    position: [35.83420608297126, 128.75675192043371],
-    status: '교내 상설 화장실',
-    description: '학생회관 내 화장실이에요. 건물 대표 위치이며, 야간 개방 여부와 이용 가능 시간은 현장에서 확인해 주세요.',
-    source: 'restroom',
-  },
-  {
-    id: 'central-library-restroom', category: 'restroom', name: '중앙도서관 화장실',
-    position: [35.83302138097258, 128.75796519012056],
-    status: '교내 상설 화장실',
-    description: '중앙도서관 내 화장실이에요. 건물 대표 위치이며, 야간 개방 여부와 이용 가능 시간은 현장에서 확인해 주세요.',
-    source: 'restroom',
-  },
-  {
-    id: 'science-library-restroom', category: 'restroom', name: '이종우과학도서관 화장실',
-    position: [35.82908934416802, 128.75663910728065],
-    status: '교내 상설 화장실',
-    description: '이종우과학도서관 내 화장실이에요. 건물 대표 위치이며, 야간 개방 여부와 이용 가능 시간은 현장에서 확인해 주세요.',
-    source: 'restroom',
-  },
+  ...restroomBuildings.map(building => ({
+    id: building.id, category: 'restroom' as const, name: `${building.name} 화장실`,
+    position: building.position, status: restroomDetailLevel(building),
+    description: building.summary, source: building.source,
+  })),
 ]
 
 export function getFilteredPlaces(filter: MapFilter): FestivalPlace[] {

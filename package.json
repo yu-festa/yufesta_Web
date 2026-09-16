@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test:push": "node --test tests/push-test.test.ts",
     "test:countdown": "node --test tests/countdown.test.ts",
-    "test:map": "node --test tests/location.test.ts"
+    "test:map": "node --test tests/location.test.ts tests/restrooms.test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

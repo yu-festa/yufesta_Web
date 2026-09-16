@@ -5,6 +5,8 @@
 
 .festival-map button:focus-visible,
 .festival-map a:focus-visible,
+.festival-map input:focus-visible,
+.festival-map select:focus-visible,
 .festival-map .leaflet-marker-icon:focus-visible {
   outline: 3px solid #1554ff;
   outline-offset: 3px;
@@ -46,3 +48,7 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.restroom-guide-body { scrollbar-width: thin; }
+.restroom-floor-filters { scrollbar-width: none; }
+.restroom-floor-filters::-webkit-scrollbar { display: none; }
