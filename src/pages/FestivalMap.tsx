@@ -176,13 +176,12 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-linear-to-b from-white/55 to-transparent px-4 pt-[max(12px,env(safe-area-inset-top))] pb-5">
         <div className="flex items-center justify-between gap-3">
           <button className={`${roundButton} pointer-events-auto`} onClick={onBack} aria-label="메인으로 돌아가기"><ControlIcon name="back" /></button>
-          <span className="rounded-full bg-white/95 px-4 py-2 text-sm font-bold shadow-sm">축제 지도</span>
           <button className={`${roundButton} pointer-events-auto`} onClick={() => dialogRef.current?.showModal()} aria-label="지도 정보와 출처"><ControlIcon name="info" /></button>
         </div>
         <nav className="pointer-events-auto mt-3 flex gap-2" aria-label="지도 장소 필터">
           {mapCategories.map(category => (
             <button key={category.id} aria-pressed={filter === category.id} onClick={() => changeFilter(category.id)}
-              className={`flex min-h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold whitespace-nowrap shadow-[0_2px_8px_#2437521a] ${filter === category.id ? 'bg-[#1554ff] text-white' : 'bg-white text-[#333]'}`}>
+              className={`flex min-h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2 text-[14px] font-semibold whitespace-nowrap shadow-[0_2px_8px_#2437521a] ${filter === category.id ? 'bg-[#1554ff] text-white' : 'bg-white text-[#333]'}`}>
               {category.icon && <span aria-hidden="true" className="text-sm">{category.icon}</span>}{category.label}
             </button>
           ))}
