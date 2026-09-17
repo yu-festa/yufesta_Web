@@ -3,13 +3,11 @@ import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import HomeLogo from '../components/HomeLogo'
 import timeTableDemo from '../assets/Main/TimeTableDemo.svg'
-import ring from '../assets/Main/Ring.svg'
+import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
 import find from '../assets/Main/Find.svg'
-import { useMotion } from '../hooks/useMotion'
+import './Main.css'
 
-const ringFrames = [{ transform: 'translateY(0) rotate(-2deg)' }, { transform: 'translateY(-4px) rotate(2deg)' }, { transform: 'translateY(0) rotate(-2deg)' }]
-const ringTiming = { duration: 5000, iterations: Infinity, easing: 'ease-in-out' }
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff]'
 const sectionLinkClass = 'flex min-h-9 w-full items-center justify-between gap-3 text-left text-[21px] leading-snug font-bold tracking-[-0.65px] [&>svg]:size-5 [&>svg]:shrink-0'
 
@@ -41,7 +39,6 @@ const panels = {
 type Panel = keyof typeof panels
 
 export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void }) {
-  const ringRef = useMotion<HTMLImageElement>(ringFrames, ringTiming)
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -64,13 +61,14 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap 
           <span><span className="font-bold text-[#1353f2]">예사가락</span><span className="font-medium"> 의 공연까지 </span><span className="font-bold text-[#1353f2]">5</span>분<span className="font-medium"> 남았어요!</span></span>
         </div>
 
-        <section data-testid="instating-banner" className="relative isolate mt-4 min-h-42 overflow-hidden rounded-lg border border-white/40 bg-[linear-gradient(180deg,#779DF9_0%,#1353F2_100%)] px-6 pt-4 pb-4 text-white shadow-[inset_0_1px_1px_#ffffffa6,inset_0_-3px_6px_#0b36b044,0_8px_20px_-10px_#1353f27a] before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-[linear-gradient(125deg,#ffffff42_0%,#ffffff09_32%,transparent_33%,#ffffff10_53%,transparent_54%)] after:pointer-events-none after:absolute after:-top-[55px] after:-right-[35px] after:-z-10 after:size-45 after:rounded-full after:border after:border-white/15 after:bg-[radial-gradient(circle_at_35%_35%,#d7f6ff66,#b2d9ff15_52%,transparent_70%)] @max-[320px]:px-4" aria-labelledby="instating-title">
-          <img ref={ringRef} data-testid="banner-ring" className="absolute top-4 right-[13px] -z-10 h-auto w-[27%] object-contain [filter:drop-shadow(0_10px_7px_#08267d55)_drop-shadow(0_-2px_5px_#e3ffff55)]" src={ring} width="100" height="80" alt="" />
-          <div className="flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-white/25 [&>span]:bg-white/15 [&>span]:px-2 [&>span]:py-0.5 [&>span]:shadow-[inset_0_1px_0_#ffffff45] [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span className="inline-flex items-center gap-1"><span className="text-[6px] leading-none" aria-hidden="true">●</span><span>신청 현황</span></span></div>
-          <span role="heading" aria-level={2} id="instating-title" className="relative block mt-1 w-max max-w-full font-['Rubik_One',sans-serif] text-[clamp(20px,8cqw,32px)] leading-[1.3] font-normal tracking-[-0.4px] whitespace-nowrap">INSTA - TING</span>
-          <span className="block font-medium relative mt-1.5 text-[12px] leading-relaxed break-keep text-[#f1f6ff]">비슷한 관심사를 가진 친구와 축제를 함께<br />즐겨보세요</span>
+        <section data-testid="instating-banner" data-theme="blue" className="instating-banner relative isolate mt-4 overflow-hidden rounded-[18px] border border-[#d9bdff66] px-5 py-5 text-white @max-[320px]:px-4" aria-labelledby="instating-title">
+          <img className="instating-banner__art" src={instatingBackground} width="1536" height="1024" alt="" draggable={false} />
+          <div className="instating-banner__shade" aria-hidden="true" />
+          <div className="instating-banner__badges flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-[#e6d1ff4d] [&>span]:bg-[#cbb1ff1a] [&>span]:px-2 [&>span]:py-0.5 [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span className="inline-flex items-center gap-1"><span className="text-[6px] leading-none text-[#efbbef]" aria-hidden="true">●</span><span>신청 현황</span></span></div>
+          <span role="heading" aria-level={2} id="instating-title" className="instating-banner__title relative mt-3 block w-fit max-w-full font-['Rubik_One',sans-serif] text-[clamp(18px,7.6cqw,32px)] leading-[1.3] font-normal tracking-[-0.8px] whitespace-nowrap">INSTA - TING</span>
+          <span className="instating-banner__description relative mt-2.5 block max-w-[74%] text-[12px] leading-relaxed font-medium break-keep text-[#f2eaff]">비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</span>
           <AnnouncementCountdown />
-          <button className="mt-3 flex min-h-8 items-center gap-1.5 rounded-full border border-white/70 bg-linear-to-b from-white to-[#e8f1ff] px-4 py-1.5 text-xs font-bold text-[#1554ff] shadow-[inset_0_1px_0_#fff,0_3px_7px_#123dab33] [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
+          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
