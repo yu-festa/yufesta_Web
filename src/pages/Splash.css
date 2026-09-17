@@ -1,0 +1,31 @@
+.splash {
+  background: linear-gradient(180deg, #090d35, #272268 65%, #9271b1);
+}
+
+.splash__sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.splash__background {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+}
+
+.splash__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 17% at 50% 50%, #090d354d, transparent),
+    linear-gradient(180deg, #090d351a, transparent 25%, transparent 80%, #090d351a);
+}
+
+.splash__logo {
+  filter: drop-shadow(0 2px 8px #090d3599) drop-shadow(0 0 24px #c8a5ff70);
+}

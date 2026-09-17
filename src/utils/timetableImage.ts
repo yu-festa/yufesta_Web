@@ -1,9 +1,8 @@
-import { jsPDF } from 'jspdf'
 import mainLogo from '../assets/mainlogo.svg'
 import { festivalTitle, getTimetableShapes, timetableHeight, timetableLayout } from '../data/timetable'
 
-export async function downloadTimetablePdf() {
-  // Canvas에 로컬 한글 글꼴을 렌더링해 PDF에서도 글자가 깨지지 않게 합니다.
+export async function downloadTimetableImage() {
+  // 로컬 한글 글꼴을 준비한 뒤 전체 일정을 고해상도 이미지로 렌더링합니다.
   await Promise.all([400, 500, 700].map(weight => document.fonts.load(`${weight} 15px Pretendard`)))
   const logo = new Image()
   logo.src = mainLogo
@@ -53,9 +52,23 @@ export async function downloadTimetablePdf() {
     context.restore()
   }
 
-  // 긴 한 페이지로 저장해 화면 밖 공연과 자정 이후 일정도 잘리지 않습니다.
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [width, height], hotfixes: ['px_scaling'], compress: true })
-  pdf.setProperties({ title: `${festivalTitle} 타임테이블`, creator: 'YU FESTA' })
-  pdf.addImage(canvas, 'PNG', 0, 0, width, height, undefined, 'FAST')
-  await pdf.save(`${festivalTitle}_타임테이블.pdf`, { returnPromise: true })
+  // 화면 밖 공연과 자정 이후 일정까지 하나의 PNG에 포함합니다.
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(result => {
+      if (result) resolve(result)
+      else reject(new Error('타임테이블 이미지를 만들 수 없습니다.'))
+    }, 'image/png')
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${festivalTitle}_타임테이블.png`
+  document.body.appendChild(link)
+  try {
+    link.click()
+  } finally {
+    link.remove()
+    // 브라우저가 파일을 읽기 전에 URL이 해제되지 않도록 여유를 둡니다.
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
 }

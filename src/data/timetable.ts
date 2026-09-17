@@ -54,7 +54,7 @@ type Circle = { kind: 'circle'; x: number; y: number; radius: number; fill: stri
 type Label = { kind: 'text'; x: number; y: number; text: string; size: number; weight: number; fill: string; anchor: 'middle' | 'end' }
 export type TimetableShape = Rectangle | Circle | Label
 
-// 화면과 PDF가 같은 도형·좌표·텍스트를 사용합니다.
+// 화면과 저장 이미지가 같은 도형·좌표·텍스트를 사용합니다.
 export function getTimetableShapes(): TimetableShape[] {
   const { left, columnWidth, headerHeight, scheduleTop, pixelsPerMinute, start, end } = timetableLayout
   const shapes: TimetableShape[] = []
