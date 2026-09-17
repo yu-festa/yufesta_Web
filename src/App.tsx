@@ -9,12 +9,18 @@ import InstatingApply from './pages/InstatingApply'
 import Profile from './pages/Profile'
 import { getCurrentProfileUser, resolveProfileAccess } from './utils/profile'
 
+import Landing from './pages/Landing'
+import { useFestivalOpening } from './hooks/useFestivalOpening'
+import { resolveFestivalStart } from './utils/festivalLaunch'
+
+const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 
-type Page = 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login' | 'instating-apply' | 'profile'
+type Page = 'entry' | 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login' | 'instating-apply' | 'profile'
 
 function getPageFromHash(): Page {
   if (window.location.pathname.replace(/\/$/, '') === '/instating/apply') return 'instating-apply'
+  if (window.location.pathname.replace(/\/$/, '') === '/main' && !window.location.hash) return 'main'
   if (window.location.hash === '#timetable') return 'timetable'
   if (window.location.hash === '#cheers') return 'cheers'
   if (window.location.hash === '#map') return 'map'
@@ -22,7 +28,7 @@ function getPageFromHash(): Page {
   if (window.location.hash === '#lost/write') return 'lost-write'
   if (window.location.hash === '#login') return 'login'
   if (window.location.hash === '#profile') return 'profile'
-  return 'main'
+  return 'entry'
 }
 
 const App = () => {
@@ -30,8 +36,9 @@ const App = () => {
   const completeSplash = useCallback(() => setShowSplash(false), [])
   const [requestedPage, setPage] = useState<Page>(getPageFromHash)
   const mainScrollRef = useRef(0)
+  const festivalOpened = useFestivalOpening(festivalStart)
   const profileAccess = resolveProfileAccess(getCurrentProfileUser(), import.meta.env.VITE_PROFILE_PREVIEW !== 'false')
-  const page = requestedPage === 'profile' && profileAccess.page === 'login' ? 'login' : requestedPage
+  const page = requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requestedPage === 'profile' && profileAccess.page === 'login' ? 'login' : requestedPage
 
   useEffect(() => {
     if (requestedPage === 'profile' && profileAccess.page === 'login') {
@@ -53,7 +60,7 @@ const App = () => {
     window.scrollTo(0, page === 'main' ? mainScrollRef.current : 0)
   }, [page])
 
-  function openPage(nextPage: Exclude<Page, 'main' | 'lost-write'>) {
+  function openPage(nextPage: Exclude<Page, 'entry' | 'main' | 'lost-write'>) {
     mainScrollRef.current = window.scrollY
     window.history.pushState({ ...window.history.state, fromMain: true }, '', `#${nextPage}`)
     setPage(nextPage)
@@ -62,7 +69,7 @@ const App = () => {
   function closePage() {
     if (window.history.state?.fromMain) window.history.back()
     else {
-      window.history.replaceState(null, '', '/')
+      window.history.replaceState(null, '', '/main')
       setPage('main')
     }
   }
@@ -70,7 +77,7 @@ const App = () => {
   function goHome() {
     mainScrollRef.current = 0
     if (page !== 'main' || window.location.hash) {
-      window.history.pushState(null, '', '/')
+      window.history.pushState(null, '', '/main')
     }
     setPage('main')
     window.scrollTo(0, 0)
@@ -92,6 +99,7 @@ const App = () => {
   return (
     <>
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
+        {page === 'landing' && <Landing target={festivalStart} />}
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
         {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
         {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
