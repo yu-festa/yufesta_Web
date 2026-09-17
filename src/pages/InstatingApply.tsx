@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import AppLayout from '../layout/AppLayout'
-import HomeLogo from '../components/HomeLogo'
+import InstatingHeader from '../components/InstatingHeader'
+import { AlreadyAppliedError, saveApplication } from '../utils/instating'
+import type { InstatingApplication as Application } from '../utils/instating'
 import { performances } from '../data/timetable'
 import './InstatingApply.css'
 
@@ -9,28 +11,16 @@ const interests = ['술', '공연', '운동', '게임', '카페', '영화', '음
 const ages = ['20 - 21세', '22 - 24세', '25 - 27세', '28세 이상']
 const consentLabels = ['[필수] 개인정보 수집·이용 동의', '[필수] 서비스 이용약관 동의', '[필수] 만 19세 이상입니다']
 
-type Application = {
-  nickname: string
-  instagram: string
-  gender: string
-  age: string
-  tags: string[]
-  performance: string
-  introduction: string
-  multipleMatches: boolean
-}
-
-function Heart() {
-  return <svg viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><path d="M50 85 15 52C-7 30 24 1 44 22l6 7 6-7C76 1 107 30 85 52Z" /></svg>
-}
-
-export default function InstatingApply({ onHome }: { onHome: () => void }) {
+export default function InstatingApply({ onHome, onProfile, alreadyApplied = false }: { onHome: () => void; onProfile: () => void; alreadyApplied?: boolean }) {
   const [step, setStep] = useState(1)
   const [application, setApplication] = useState<Application>({
     nickname: '', instagram: '', gender: '', age: '', tags: [], performance: '', introduction: '', multipleMatches: false,
   })
   const [consents, setConsents] = useState([false, false, false])
   const [error, setError] = useState('')
+  const [duplicate, setDuplicate] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const submitting = useRef(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const previousStep = useRef(step)
   const selectedPerformance = performances.find(item => item.id === application.performance)
@@ -48,8 +38,10 @@ export default function InstatingApply({ onHome }: { onHome: () => void }) {
     setError('')
   }
 
-  function next(event: FormEvent<HTMLFormElement>) {
+  async function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submitting.current || step === 4) return
+    if (alreadyApplied || duplicate) { setDuplicate(true); return }
     if (step === 1 && !application.nickname.trim()) {
       setError('닉네임을 입력해 주세요.')
       return
@@ -63,30 +55,52 @@ export default function InstatingApply({ onHome }: { onHome: () => void }) {
       return
     }
     setError('')
-    // UI preview only. Connect the application API before treating this as a server submission.
+    if (step === 3) {
+      submitting.current = true
+      setSaving(true)
+      try { await saveApplication(application) }
+      catch (reason) {
+        if (reason instanceof AlreadyAppliedError) setDuplicate(true)
+        else setError('브라우저에 저장하지 못했어요. 저장 공간과 브라우저 설정을 확인한 후 다시 시도해주세요.')
+        return
+      } finally { submitting.current = false; setSaving(false) }
+    }
     setStep(current => current + 1)
   }
 
   function back() {
+    if (submitting.current) return
     if (step === 1) onHome()
     else { setError(''); setStep(current => current - 1) }
   }
 
+  if ((alreadyApplied || duplicate) && step !== 4) return (
+    <AppLayout header={<InstatingHeader onHome={onHome} onProfile={onProfile} />}>
+      <section className="instating-apply instating-success">
+        <span className="instating-success-mark" aria-hidden="true">♡</span>
+        <h1 className="text-2xl font-bold">이미 신청을 완료했어요</h1>
+        <p>인스타팅은 한 번만 신청할 수 있어요.<br />마이페이지에서 신청 내역과 결과를 확인해주세요.</p>
+        <button type="button" className="instating-primary" onClick={onProfile}>신청 내역 확인하기</button>
+        <button type="button" className="instating-secondary" onClick={onHome}>홈으로 돌아가기</button>
+      </section>
+    </AppLayout>
+  )
+
   return (
-    <AppLayout header={<div className={`flex h-22 items-center ${step === 4 ? 'instating-complete-header' : ''}`}><HomeLogo onHome={onHome} />{step === 4 && <span className="instating-header-stars" aria-hidden="true">✦<span>✧</span></span>}</div>}>
+    <AppLayout header={<InstatingHeader onHome={onHome} onProfile={onProfile} />}>
       <div className="instating-apply">
         {step < 4 && <div className="instating-page-heading">
           {step < 4 && <button type="button" className="instating-back" onClick={back} aria-label={step === 1 ? '홈으로 돌아가기' : '이전 단계로 돌아가기'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m14 5-7 7 7 7" /></svg>
           </button>}
-          <h1>인스타팅 신청</h1>
+          <span>STEP 0{step} / 03</span>
+          <ol className="instating-steps" aria-label="신청 진행 단계">{['기본 정보', '취향 선택', '최종 확인'].map((label, index) => <li key={label} aria-current={step === index + 1 ? 'step' : undefined} data-done={step > index + 1}><span>{index + 1}</span>{label}</li>)}</ol>
         </div>}
 
         {step < 4 ? <form onSubmit={next}>
           <div className="instating-intro">
             <h2 ref={headingRef} tabIndex={-1}>{step === 1 ? '나를 소개해 주세요' : step === 2 ? '어떤 축제를 선호하나요?' : '신청 정보를 확인해주세요'}</h2>
             <p>{step === 1 ? '내가 입력한 정보와 맞는 친구를 찾아드려요.' : step === 2 ? '취향이 비슷한 친구를 찾는 데 도움이 돼요' : '인스타그램 아이디가 맞는지 꼭 확인해주세요'}</p>
-            <span className="sr-only">총 3단계 중 {step}단계</span>
             {step < 3 && <span className="instating-required-note">필수 항목 *</span>}
           </div>
 
@@ -150,15 +164,17 @@ export default function InstatingApply({ onHome }: { onHome: () => void }) {
             </fieldset>
           </>}
           <p className="instating-error" role="alert">{error}</p>
-          <button className="instating-primary" type="submit">{step === 3 ? '완료' : '다음'}</button>
+          <button className="instating-primary" type="submit" disabled={saving}>{saving ? '신청 저장 중…' : step === 3 ? '신청 완료하기' : '다음 단계로'}</button>
+          <p className="instating-local-note">현재는 미리보기예요. 신청 정보는 이 브라우저에만 저장됩니다.</p>
         </form> : <section className="instating-success">
-          <div className="instating-success-decoration" aria-hidden="true"><span className="instating-background-star instating-background-star-one">✦</span><span className="instating-background-star instating-background-star-two">✧</span><span className="instating-background-star instating-background-star-three">✦</span></div>
-          <div className="instating-heart-scene" aria-hidden="true"><span className="instating-heart-ring" /><span className="instating-heart"><Heart /></span><span className="instating-spark instating-spark-one">✦</span><span className="instating-spark instating-spark-two">✦</span></div>
-          <span className="instating-success-eyebrow">설레는 만남의 시작</span>
+          <span className="instating-success-mark" aria-hidden="true">♡</span>
+          <span className="instating-success-eyebrow">YOU'RE ON THE LIST</span>
           <h2 ref={headingRef} tabIndex={-1}>신청이 완료되었습니다!</h2>
           <p>축제를 함께 즐길 새로운 친구,<br />두근두근, 조금만 기다려주세요.</p>
-          <div className="instating-result-date"><div className="instating-result-content"><span className="instating-result-label">매칭 결과 발표</span><strong>시간 미정</strong></div></div>
-          <button type="button" className="instating-primary" onClick={onHome}>홈으로 돌아가기</button>
+          <div className="instating-completion-ticket"><span>2026 YU FESTA · INSTA-TING</span><h3>{application.nickname}님의 신청서</h3><p>@{application.instagram}</p><div><span>매칭 결과 발표</span><strong>시간 미정</strong></div><p>발표 후 마이페이지에서 카드를 두드려<br />나의 매칭 결과를 확인해보세요.</p></div>
+          <p className="instating-local-note">브라우저에 저장된 미리보기 신청 내역입니다.</p>
+          <button type="button" className="instating-primary" onClick={onProfile}>마이페이지에서 확인하기</button>
+          <button type="button" className="instating-secondary" onClick={onHome}>홈으로 돌아가기</button>
         </section>}
       </div>
     </AppLayout>

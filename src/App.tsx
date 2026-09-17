@@ -7,18 +7,22 @@ import LostFound from './pages/LostFound'
 import Login from './pages/Login'
 import InstatingApply from './pages/InstatingApply'
 import Profile from './pages/Profile'
+import InstatingResult from './pages/InstatingResult'
+import { APPLICATION_STORAGE_KEY, readApplications } from './utils/instating'
 import { getCurrentProfileUser, resolveProfileAccess } from './utils/profile'
-
 import Landing from './pages/Landing'
 import { useFestivalOpening } from './hooks/useFestivalOpening'
 import { resolveFestivalStart } from './utils/festivalLaunch'
 
-const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
+const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 
-type Page = 'entry' | 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login' | 'instating-apply' | 'profile'
+type Page = 'entry' | 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
 
 function getPageFromHash(): Page {
+  if (window.location.hash.startsWith('#profile/result/')) return 'instating-result'
+  if (window.location.hash === '#profile') return 'profile'
+  if (window.location.hash === '#instating-apply') return 'instating-apply'
   if (window.location.pathname.replace(/\/$/, '') === '/instating/apply') return 'instating-apply'
   if (window.location.pathname.replace(/\/$/, '') === '/main' && !window.location.hash) return 'main'
   if (window.location.hash === '#timetable') return 'timetable'
@@ -36,18 +40,21 @@ const App = () => {
   const completeSplash = useCallback(() => setShowSplash(false), [])
   const [requestedPage, setPage] = useState<Page>(getPageFromHash)
   const mainScrollRef = useRef(0)
+  const [, refreshApplications] = useState(0)
   const festivalOpened = useFestivalOpening(festivalStart)
   const profileAccess = resolveProfileAccess(getCurrentProfileUser(), import.meta.env.VITE_PROFILE_PREVIEW !== 'false')
-  const page = requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requestedPage === 'profile' && profileAccess.page === 'login' ? 'login' : requestedPage
+  const alreadyApplied = readApplications().length > 0 || (profileAccess.user?.participations.some(item => !item.isDemo) ?? false)
+  const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
+  const page = requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : (requestedPage === 'profile' || requestedPage === 'instating-result') && profileAccess.page === 'login' ? 'login' : requestedPage
 
   useEffect(() => {
-    if (requestedPage === 'profile' && profileAccess.page === 'login') {
+    if ((requestedPage === 'profile' || requestedPage === 'instating-result') && profileAccess.page === 'login') {
       window.history.replaceState(window.history.state, '', '/#login')
     }
   }, [requestedPage, profileAccess.page])
 
   useEffect(() => {
-    const syncPage = () => setPage(getPageFromHash())
+    const syncPage = () => { setPage(getPageFromHash()); setResultId(window.location.hash.slice('#profile/result/'.length)) }
     window.addEventListener('popstate', syncPage)
     window.addEventListener('hashchange', syncPage)
     return () => {
@@ -56,13 +63,19 @@ const App = () => {
     }
   }, [])
 
+  useEffect(() => {
+    const sync = (event: StorageEvent) => { if (event.key === APPLICATION_STORAGE_KEY || event.key === null) refreshApplications(value => value + 1) }
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
+
   useLayoutEffect(() => {
     window.scrollTo(0, page === 'main' ? mainScrollRef.current : 0)
   }, [page])
 
   function openPage(nextPage: Exclude<Page, 'entry' | 'main' | 'lost-write'>) {
     mainScrollRef.current = window.scrollY
-    window.history.pushState({ ...window.history.state, fromMain: true }, '', `#${nextPage}`)
+    window.history.pushState({ ...window.history.state, fromMain: true }, '', `/main#${nextPage}`)
     setPage(nextPage)
   }
 
@@ -72,6 +85,17 @@ const App = () => {
       window.history.replaceState(null, '', '/main')
       setPage('main')
     }
+  }
+
+  function openResult(id: string) {
+    window.history.pushState(null, '', `/main#profile/result/${encodeURIComponent(id)}`)
+    setResultId(encodeURIComponent(id))
+    setPage('instating-result')
+  }
+
+  function openProfile() {
+    window.history.pushState(null, '', '/main#profile')
+    setPage('profile')
   }
 
   function goHome() {
@@ -105,9 +129,10 @@ const App = () => {
         {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
         {(page === 'lost' || page === 'lost-write') && <LostFound isWriting={page === 'lost-write'} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
-        {page === 'profile' && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} /> : <Login onBack={closePage} onHome={goHome} />)}
-        {page === 'instating-apply' && <InstatingApply onHome={goHome} />}
-        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} onApplyInstating={() => openPage('login')} onOpenProfile={() => openPage(profileAccess.page)} />}
+        {page === 'profile' && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} onResult={openResult} onApply={() => openPage('instating-apply')} /> : <Login onBack={closePage} onHome={goHome} />)}
+        {page === 'instating-result' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={profileAccess.user.participations.find(item => encodeURIComponent(item.id) === resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} />}
+        {page === 'instating-apply' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} />}
+        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} onApplyInstating={() => alreadyApplied ? openProfile() : openPage('login')} onOpenProfile={() => openPage(profileAccess.page)} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

@@ -37,7 +37,7 @@ const panels = {
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void }) {
+export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -70,7 +70,7 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
           <span role="heading" aria-level={2} id="instating-title" className="instating-banner__title relative mt-3 block w-fit max-w-full font-['Rubik_One',sans-serif] text-[clamp(18px,7.6cqw,32px)] leading-[1.3] font-normal tracking-[-0.8px] whitespace-nowrap">INSTA - TING</span>
           <span className="instating-banner__description relative mt-2.5 block max-w-[74%] text-[12px] leading-relaxed font-medium break-keep text-[#f2eaff]">비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</span>
           <AnnouncementCountdown />
-          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={onApplyInstating}>신청하기 <Icon name="arrow" /></button>
+          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={onApplyInstating}>{alreadyApplied ? '신청 내역 확인하기' : '신청하기'} <Icon name="arrow" /></button>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
