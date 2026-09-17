@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import HomeLogo from '../components/HomeLogo'
+import { initialCheers } from '../data/cheers'
 import timeTableDemo from '../assets/Main/TimeTableDemo.svg'
 import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
@@ -31,7 +32,7 @@ function Icon({ name, className = '' }: { name: keyof typeof iconPaths; classNam
 const demoPerformances = Array.from({ length: 3 }, (_, index) => ({
   id: `demo-${index}`, title: 'COUNTDOWN FANTASY 2025-2026', date: '2025.12.20 - 2025.12.21',
 }))
-const cheers = ['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔다 !!']
+const cheers = [...new Set(['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔다 !!', ...initialCheers.map(cheer => cheer.message)])].slice(0, 9)
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
 }
@@ -39,6 +40,7 @@ type Panel = keyof typeof panels
 
 export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
+  const [cheersPaused, setCheersPaused] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -90,9 +92,16 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
         <section className="mt-10" aria-labelledby="cheers-title">
           <span className="block font-medium text-[#777] text-[13px]">함께 만드는 축제의 순간</span>
           <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={onOpenCheers}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <ul className="mt-2.5 flex min-h-11 items-center gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-[10px] bg-[#f6f6f6] px-4 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>li]:flex [&>li]:shrink-0 [&>li]:items-center [&>li]:gap-2.5 [&>li]:text-sm [&>li]:leading-normal [&>li]:whitespace-nowrap [&_span]:text-base [&_span]:font-bold [&_span]:text-[#1554ff] font-medium" aria-label="응원 메시지 예시">
-            {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
-          </ul>
+          <div className="cheers-ticker" data-paused={cheersPaused}>
+            <div className="cheers-ticker-window" tabIndex={0} role="region" aria-label="응원 메시지. 자동으로 왼쪽으로 이동합니다.">
+              <div className="cheers-ticker-track">
+                {[0, 1].map(copy => <ul key={copy} className="cheers-ticker-list" aria-label={copy === 0 ? '응원 메시지 예시' : undefined} aria-hidden={copy === 1 || undefined}>
+                  {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
+                </ul>)}
+              </div>
+            </div>
+            <button type="button" className="cheers-ticker-toggle" onClick={() => setCheersPaused(paused => !paused)} aria-label={cheersPaused ? '응원글 자동 이동 재생' : '응원글 자동 이동 일시정지'} aria-pressed={cheersPaused}><span aria-hidden="true">{cheersPaused ? '▶' : 'Ⅱ'}</span></button>
+          </div>
         </section>
 
         <nav className="mt-12 grid gap-6" aria-label="축제 이용 안내">
