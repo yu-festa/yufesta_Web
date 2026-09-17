@@ -14,6 +14,7 @@ const sectionLinkClass = 'flex min-h-9 w-full items-center justify-between gap-3
 const shortcutClass = 'grid min-h-28 w-full grid-cols-[28px_minmax(0,1fr)_86px] items-start gap-3 rounded-[10px] border px-5 py-5 text-left [&>svg]:mt-0.5 [&>svg]:size-6 [&>svg]:text-[#1554ff] [&>img]:-my-1.5 [&>img]:h-20 [&>img]:w-[86px] [&>img]:self-center [&>img]:object-contain @max-[320px]:grid-cols-[24px_minmax(0,1fr)_62px] @max-[320px]:gap-2 @max-[320px]:px-3.5 @max-[320px]:[&>img]:w-[62px]'
 
 const iconPaths = {
+  profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></>,
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 9h18c0-1-3-2-3-9Z" /><path d="M10 21h4" /></>,
   arrow: <path d="m9 4 7 8-7 8" />,
   speaker: <><path d="m14 4-8 5H3v6h3l8 5V4ZM6 15l2 5h3l-2-3M17 8v8M20 6v12" /></>,
@@ -36,7 +37,7 @@ const panels = {
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void }) {
+export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -48,7 +49,10 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
     <AppLayout header={
       <div className="flex h-22 items-center justify-between">
         <HomeLogo onHome={onHome} />
-        <button className={iconButtonClass} aria-label="알림 확인" onClick={() => setActivePanel('notifications')}><Icon name="bell" /></button>
+        <div className="flex items-center">
+          <button type="button" className={iconButtonClass} aria-label="내 프로필" onClick={onOpenProfile}><Icon name="profile" /></button>
+          <button className={iconButtonClass} aria-label="알림 확인" onClick={() => setActivePanel('notifications')}><Icon name="bell" /></button>
+        </div>
       </div>
     }>
       <div className="@container pb-5 text-[#111] [&_button]:cursor-pointer [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-[#1554ff]">
