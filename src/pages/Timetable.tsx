@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
-import mainLogo from '../assets/mainlogo.svg'
+import HomeLogo from '../components/HomeLogo'
 import TimetableChart from '../components/TimetableChart'
 import { festivalTitle } from '../data/timetable'
 
 const buttonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff] disabled:cursor-wait disabled:opacity-40'
 
-export default function Timetable({ onBack }: { onBack: () => void }) {
+export default function Timetable({ onBack, onHome }: { onBack: () => void; onHome: () => void }) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const savingRef = useRef(false)
@@ -31,7 +31,7 @@ export default function Timetable({ onBack }: { onBack: () => void }) {
   return (
     <AppLayout padded={false} header={
       <div className="flex h-22 items-center">
-        <img className="-ml-3 h-16 w-44 object-contain" src={mainLogo} width="176" height="64" alt="YU FESTA" />
+        <HomeLogo onHome={onHome} />
       </div>
     }>
       <section className="pb-3 text-[#111]" aria-labelledby="timetable-heading">

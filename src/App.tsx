@@ -49,13 +49,22 @@ const App = () => {
     }
   }
 
+  function goHome() {
+    mainScrollRef.current = 0
+    if (page !== 'main' || window.location.hash) {
+      window.history.pushState(null, '', '/')
+    }
+    setPage('main')
+    window.scrollTo(0, 0)
+  }
+
   return (
     <>
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
-        {page === 'timetable' && <Timetable onBack={closePage} />}
-        {page === 'cheers' && <Cheers onBack={closePage} />}
+        {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
+        {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
         {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
-        {page === 'main' && <Main onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} />}
+        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

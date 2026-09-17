@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
-import mainLogo from '../assets/mainlogo.svg'
+import HomeLogo from '../components/HomeLogo'
 import timeTableDemo from '../assets/Main/TimeTableDemo.svg'
 import ring from '../assets/Main/Ring.svg'
 import map from '../assets/Main/Map.svg'
@@ -40,7 +40,7 @@ const panels = {
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onOpenTimetable, onOpenCheers, onOpenMap }: { onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void }) {
+export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void }) {
   const ringRef = useMotion<HTMLImageElement>(ringFrames, ringTiming)
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -52,7 +52,7 @@ export default function Main({ onOpenTimetable, onOpenCheers, onOpenMap }: { onO
   return (
     <AppLayout header={
       <div className="flex h-22 items-center justify-between">
-        <img className="-ml-3 h-16 w-44 object-contain" src={mainLogo} width="176" height="64" alt="YU FESTA" />
+        <HomeLogo onHome={onHome} />
         <button className={iconButtonClass} aria-label="알림 확인" onClick={() => setActivePanel('notifications')}><Icon name="bell" /></button>
       </div>
     }>
