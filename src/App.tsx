@@ -4,10 +4,11 @@ import Splash from './pages/Splash'
 import Timetable from './pages/Timetable'
 import Cheers from './pages/Cheers'
 import LostFound from './pages/LostFound'
+import Login from './pages/Login'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 
-type Page = 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write'
+type Page = 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login'
 
 function getPageFromHash(): Page {
   if (window.location.hash === '#timetable') return 'timetable'
@@ -15,6 +16,7 @@ function getPageFromHash(): Page {
   if (window.location.hash === '#map') return 'map'
   if (window.location.hash === '#lost') return 'lost'
   if (window.location.hash === '#lost/write') return 'lost-write'
+  if (window.location.hash === '#login') return 'login'
   return 'main'
 }
 
@@ -81,7 +83,8 @@ const App = () => {
         {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
         {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
         {(page === 'lost' || page === 'lost-write') && <LostFound isWriting={page === 'lost-write'} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
-        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} />}
+        {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
+        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} onApplyInstating={() => openPage('login')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

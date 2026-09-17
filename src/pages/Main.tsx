@@ -33,11 +33,10 @@ const demoPerformances = Array.from({ length: 3 }, (_, index) => ({
 const cheers = ['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔다 !!']
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
-  instating: { title: 'INSTA - TING', description: '인스타팅 신청은 준비 중이에요. 신청 일정이 열리면 안내해 드릴게요.' },
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void }) {
+export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -67,7 +66,7 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
           <span role="heading" aria-level={2} id="instating-title" className="instating-banner__title relative mt-3 block w-fit max-w-full font-['Rubik_One',sans-serif] text-[clamp(18px,7.6cqw,32px)] leading-[1.3] font-normal tracking-[-0.8px] whitespace-nowrap">INSTA - TING</span>
           <span className="instating-banner__description relative mt-2.5 block max-w-[74%] text-[12px] leading-relaxed font-medium break-keep text-[#f2eaff]">비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</span>
           <AnnouncementCountdown />
-          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={() => setActivePanel('instating')}>신청하기 <Icon name="arrow" /></button>
+          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={onApplyInstating}>신청하기 <Icon name="arrow" /></button>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
