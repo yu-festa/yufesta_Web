@@ -3,7 +3,7 @@ import AppLayout from '../layout/AppLayout'
 import { useMotion } from '../hooks/useMotion'
 import { getFestivalCountdown } from '../utils/festivalLaunch'
 import mainLogo from '../assets/mainlogo.svg'
-import purmaArtwork from '../assets/Instating/purma-reference.png'
+import purmaArtwork from '../assets/Landing/purma-guitar.png'
 import heroBackground from '../assets/Landing/starfield-blue.png'
 import instatingArtwork from '../assets/Main/InstatingBackground.webp'
 import mapArtwork from '../assets/Main/Map.svg'
@@ -90,7 +90,7 @@ export default function Landing({ target }: { target: number }) {
           <p className="mt-5 text-[13px] leading-6 text-[#c2d3ef]">공연 시간부터 축제 지도까지.<br />필요한 정보는 여기서 확인하세요.</p>
         </div>
         <div ref={artworkRef} className="relative mx-auto mt-7 w-[90%] max-w-94">
-          <img src={purmaArtwork} alt="하트 풍선을 들고 축제 무대에서 기다리는 푸르마" className="relative h-auto w-full drop-shadow-[0_14px_24px_#03174e60]" width="1431" height="1102" />
+          <img src={purmaArtwork} alt="파란 기타를 연주하는 푸르마" className="relative h-auto max-h-80 w-full object-contain drop-shadow-[0_14px_24px_#03174e60]" width="992" height="1340" />
         </div>
       </section>
 
