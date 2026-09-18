@@ -3,7 +3,6 @@ import AppLayout from '../layout/AppLayout'
 import { useMotion } from '../hooks/useMotion'
 import { getFestivalCountdown } from '../utils/festivalLaunch'
 import mainLogo from '../assets/mainlogo.svg'
-import purmaArtwork from '../assets/Landing/purma-guitar.png'
 import heroBackground from '../assets/Landing/starfield-blue.png'
 import instatingArtwork from '../assets/Main/InstatingBackground.webp'
 import mapArtwork from '../assets/Main/Map.svg'
@@ -40,12 +39,12 @@ function LandingCountdown({ target }: { target: number }) {
     return () => { clearInterval(timer); window.removeEventListener('focus', update); document.removeEventListener('visibilitychange', update) }
   }, [target])
   const units = [{ value: remaining.days, label: '일' }, { value: remaining.hours, label: '시' }, { value: remaining.minutes, label: '분' }, { value: remaining.seconds, label: '초' }]
-  return <div className="grid grid-cols-4 gap-2 py-7 @max-[350px]:gap-1.5" role="timer" aria-live="off" aria-label={`축제까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
+  return <div className="relative isolate grid grid-cols-4 gap-2 py-6 before:pointer-events-none before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-[radial-gradient(ellipse_at_center,#04163080_0%,transparent_72%)] @max-[350px]:gap-1.5" role="timer" aria-live="off" aria-label={`축제까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
     {units.map(unit => <div className="flex min-w-0 items-end gap-1 @max-[350px]:gap-0.5" key={unit.label} aria-hidden="true">
       <div className="flex min-w-0 flex-1 gap-1 @max-[350px]:gap-0.5">
-        {String(unit.value).padStart(2, '0').split('').map((digit, index) => <span key={index} className="grid h-[clamp(48px,14cqw,64px)] min-w-0 flex-1 place-items-center rounded-xl border border-white/25 bg-white/[.08] text-[clamp(24px,7.5cqw,36px)] leading-none font-bold tabular-nums text-white shadow-[0_8px_24px_#00000040,inset_0_1px_0_#ffffff66,inset_0_-1px_0_#0000001a]">{digit}</span>)}
+        {String(unit.value).padStart(2, '0').split('').map((digit, index) => <span key={index} className="grid h-[clamp(48px,14cqw,64px)] min-w-0 flex-1 place-items-center rounded-xl border border-[#b9d9ff]/15 bg-linear-to-b from-[#a7d4ff]/12 to-[#102d58]/25 text-[clamp(24px,7.5cqw,36px)] leading-none font-semibold tabular-nums text-[#f1f8ff] shadow-[inset_0_1px_0_#d9edff1a,0_4px_16px_#0313291a] backdrop-blur-[3px] [text-shadow:0_0_14px_#8ac7ff40]">{digit}</span>)}
       </div>
-      <span className="mb-1.5 shrink-0 text-[11px] leading-none font-normal text-[#c8d5ea]">{unit.label}</span>
+      <span className="mb-1.5 shrink-0 text-[11px] leading-none font-normal text-[#c8ddf5] [text-shadow:0_1px_6px_#031329]">{unit.label}</span>
     </div>)}
   </div>
 }
@@ -70,7 +69,7 @@ function FeatureArtwork({ id }: { id: string }) {
 export default function Landing({ target }: { target: number }) {
   const [activeFeature, setActiveFeature] = useState(0)
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([])
-  const artworkRef = useMotion<HTMLDivElement>(entranceFrames, entranceTiming)
+  const countdownRef = useMotion<HTMLElement>(entranceFrames, entranceTiming)
   function goTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
   }
@@ -89,19 +88,15 @@ export default function Landing({ target }: { target: number }) {
           <h1 id="landing-title" className="mt-4 text-[clamp(32px,9.5cqw,44px)] leading-[1.25] font-bold tracking-[-1.6px]">10월 2일,<br />축제에서 만나요.</h1>
           <p className="mt-5 text-[13px] leading-6 text-[#c2d3ef]">공연 시간부터 축제 지도까지.<br />필요한 정보는 여기서 확인하세요.</p>
         </div>
-        <div ref={artworkRef} className="relative mx-auto mt-7 w-[90%] max-w-94">
-          <img src={purmaArtwork} alt="파란 기타를 연주하는 푸르마" className="relative h-auto max-h-80 w-full object-contain drop-shadow-[0_14px_24px_#03174e60]" width="992" height="1340" />
-        </div>
+      <section ref={countdownRef} id="landing-countdown" className={`${sectionClass} relative mt-12 text-center`} aria-labelledby="landing-countdown-title">
+        <h2 id="landing-countdown-title" className="text-[16px] leading-7 font-medium tracking-[.3px] text-[#d8eaff] [text-shadow:0_2px_12px_#03132980]">축제까지 남은 시간</h2>
+        <LandingCountdown target={target} />
+        <p className="text-[13px] leading-6 text-[#c1d5ed] [text-shadow:0_1px_8px_#031329]"><time dateTime="2026-10-02T00:00:00+09:00" className="font-semibold text-[#d7ebff]">10월 2일 0시</time>에 메인 화면이 열려요.</p>
+        <button type="button" onClick={() => goTo('landing-services')} className="mx-auto mt-7 flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#b4d5ff]/30 bg-linear-to-r from-[#1554ff]/35 to-[#64c0ff]/25 px-7 text-[15px] font-bold text-white backdrop-blur-sm transition-colors hover:from-[#1554ff]/60 hover:to-[#64c0ff]/40 motion-reduce:transition-none">서비스 둘러보기<Arrow className="size-4 rotate-90" /></button>
+      </section>
       </section>
 
       <div className="bg-[linear-gradient(180deg,#071a3c_0%,#103362_22%,#0a264f_48%,#06162e_76%,#0a2854_100%)]">
-      <section id="landing-countdown" className={`${sectionClass} pt-10 pb-16 text-center`} aria-labelledby="landing-countdown-title">
-        <h2 id="landing-countdown-title" className="text-[18px] leading-7 font-semibold tracking-[-.3px]">축제까지 남은 시간</h2>
-        <LandingCountdown target={target} />
-        <p className="text-[13px] leading-6 text-[#a4b9d8]"><time dateTime="2026-10-02T00:00:00+09:00" className="font-semibold text-[#88bcff]">10월 2일 0시</time>에 메인 화면이 열려요.</p>
-        <button type="button" onClick={() => goTo('landing-services')} className="mx-auto mt-7 flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#b4d5ff]/30 bg-linear-to-r from-[#1554ff]/35 to-[#64c0ff]/25 px-7 text-[15px] font-bold text-white backdrop-blur-sm transition-colors hover:from-[#1554ff]/60 hover:to-[#64c0ff]/40 motion-reduce:transition-none">서비스 둘러보기<Arrow className="size-4 rotate-90" /></button>
-      </section>
-
       <section id="landing-services" className={`${sectionClass} border-t border-white/10 pt-14 pb-10`} aria-labelledby="landing-services-title">
         <h2 id="landing-services-title" className="text-[clamp(26px,8cqw,34px)] leading-[1.4] font-extrabold tracking-[-.8px]">축제 가기 전에<br />확인해보세요.</h2>
         <p className="mt-4 text-[15px] leading-7 text-[#adc0de]">공연 시간, 장소, 인스타팅까지 한곳에서.</p>
