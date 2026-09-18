@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import './FestivalMap.css'
 import { campusCenter, festivalPlaces, getFilteredPlaces, mapCategories, mapSources } from '../data/festivalMap'
 import type { FestivalPlace, MapFilter } from '../data/festivalMap'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
@@ -169,7 +168,7 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
   }, [selected])
 
   return (
-    <main className="festival-map relative isolate mx-auto h-dvh min-h-100 w-full max-w-(--app-max-width) overflow-hidden bg-[#e7eee7] text-[#222]">
+    <main className={"[&_.leaflet-container]:bg-[#e7eee7] [&_.leaflet-container]:[font-family:inherit] [&_button:focus-visible]:[outline:3px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[3px] [&_a:focus-visible]:[outline:3px_solid_#1554ff] [&_a:focus-visible]:outline-offset-[3px] [&_input:focus-visible]:[outline:3px_solid_#1554ff] [&_input:focus-visible]:outline-offset-[3px] [&_select:focus-visible]:[outline:3px_solid_#1554ff] [&_select:focus-visible]:outline-offset-[3px] [&_.leaflet-marker-icon:focus-visible]:[outline:3px_solid_#1554ff] [&_.leaflet-marker-icon:focus-visible]:outline-offset-[3px] [&_.leaflet-control-attribution]:mb-[max(4px,_env(safe-area-inset-bottom))] [&_.leaflet-control-attribution]:[padding:2px_6px] [&_.leaflet-control-attribution]:[border-radius:5px_0_0_0] [&_.leaflet-control-attribution]:[background:rgb(255_255_255_/_95%)] [&_.leaflet-control-attribution]:text-[10px] [&_.festival-marker]:grid [&_.festival-marker]:place-items-center [&_.festival-marker]:[border:2px_solid_#ef7276] [&_.festival-marker]:rounded-full [&_.festival-marker]:bg-white [&_.festival-marker]:[box-shadow:0_3px_8px_#24375240] [&_.festival-marker--restroom]:[border-color:#75a7e7] [&_.festival-marker--delivery]:[border-color:#596579] [&_.festival-marker-content]:text-[23px] [&_.festival-marker-content]:leading-[1] [&_.festival-user-location]:[border:3px_solid_white] [&_.festival-user-location]:rounded-full [&_.festival-user-location]:bg-[#2674ff] [&_.festival-user-location]:[box-shadow:0_0_0_5px_#2674ff22,_0_2px_5px_#173f7840] [&_.leaflet-tooltip]:[padding:6px_9px] [&_.leaflet-tooltip]:[border:0] [&_.leaflet-tooltip]:rounded-[8px] [&_.leaflet-tooltip]:[font-family:inherit] [&_.leaflet-tooltip]:text-[12px] [&_.leaflet-tooltip]:font-semibold festival-map relative isolate mx-auto h-dvh min-h-100 w-full max-w-(--app-max-width) overflow-hidden bg-[#e7eee7] text-[#222]"}>
       <h1 className="sr-only">영남대학교 축제 지도</h1>
       <div ref={containerRef} className="absolute inset-0 z-0" role="region" aria-label="영남대학교 지도. 방향키로 이동하고 더하기와 빼기로 확대 또는 축소할 수 있어요." />
 

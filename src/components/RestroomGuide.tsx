@@ -32,7 +32,7 @@ function BuildingDetails({ building, onShowOnMap }: { building: RestroomBuilding
           </select>
         </label>
       </div>
-      <div className="restroom-floor-filters mt-2 flex gap-1.5 overflow-x-auto pb-2" role="group" aria-label="화장실 층 선택">
+      <div className={"[scrollbar-width:none] [&::-webkit-scrollbar]:hidden restroom-floor-filters mt-2 flex gap-1.5 overflow-x-auto pb-2"} role="group" aria-label="화장실 층 선택">
         {(['all', ...floors] as const).map(value => <button key={value} aria-pressed={floor === value} onClick={() => setFloor(value)} className={`min-h-10 shrink-0 cursor-pointer rounded-full px-3 text-xs font-semibold ${floor === value ? 'bg-[#1554ff] text-white' : 'bg-[#f3f5f8] text-[#667085]'}`}>{value === 'all' ? '전체 층' : floorLabel(value)}</button>)}
       </div>
       <p className="mt-1 text-[11px] leading-relaxed text-[#667085]">공개 자료에 표시된 위치예요. 호실 번호는 확인되지 않았어요.</p>
@@ -149,7 +149,7 @@ export default function RestroomGuide({ initialBuildingId, onClose, onShowOnMap 
         </div>
         <button className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full text-[#667085]" onClick={() => dialogRef.current?.close()} aria-label="화장실 안내 닫기"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12M6 18 18 6" /></svg></button>
       </header>
-      <div ref={contentRef} className="restroom-guide-body min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(20px,env(safe-area-inset-bottom))]">
+      <div ref={contentRef} className={"[scrollbar-width:thin] restroom-guide-body min-h-0 overflow-y-auto overscroll-contain p-5 pb-[max(20px,env(safe-area-inset-bottom))]"}>
         {building ? <BuildingDetails key={building.id} building={building} onShowOnMap={() => { onShowOnMap(building.id); dialogRef.current?.close() }} /> : <BuildingDirectory onSelect={setBuildingId} />}
       </div>
     </div>

@@ -10,7 +10,7 @@ const digitTiming = { duration: 380, easing: 'cubic-bezier(.2, .7, .3, 1)' }
 
 function AnimatedNumber({ value }: { value: number }) {
   const ref = useMotion<HTMLElement>(digitFrames, digitTiming, value)
-  return <span ref={ref} className="block py-0.5 text-[clamp(17px,5.2cqw,24px)] leading-[1.3] font-bold tabular-nums">{String(value).padStart(2, '0')}</span>
+  return <span ref={ref} className={"block text-[clamp(30px,_10.5cqw,_48px)] font-[750] leading-[1.1] tracking-[-1.3px] tabular-nums instating-banner-number"}>{String(value).padStart(2, '0')}</span>
 }
 
 const announcementLabel = new Intl.DateTimeFormat('ko-KR', {
@@ -44,16 +44,16 @@ export default function AnnouncementCountdown() {
   ]
 
   return (
-    <div className="instating-banner__countdown mt-3 grid min-h-16 w-full grid-cols-[minmax(0,.7fr)_minmax(0,1.65fr)] items-center gap-2 rounded-[9px] px-2.5 py-2 @max-[320px]:grid-cols-[minmax(0,.6fr)_minmax(0,1.75fr)] @max-[320px]:gap-1.5 @max-[320px]:px-2" role="timer" aria-live="off" aria-label={remaining.ended ? '결과 발표 예정 시간이 되었습니다' : `1차 결과 발표까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
+    <div className={"mt-[17px] instating-banner-countdown"} role="timer" aria-live="off" aria-label={remaining.ended ? '결과 발표 예정 시간이 되었습니다' : `1차 결과 발표까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
       <div>
-        <span className="block text-[12px] leading-normal font-semibold break-keep">{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</span>
-        <time className="mt-1 block text-[8px] leading-normal text-[#ede1fa]" dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
+        <span className={"block text-[clamp(14px,_3.5cqw,_17px)] leading-[1.4] font-[750] tracking-[-.4px] instating-banner-countdown-label"}>{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</span>
+        <time className="sr-only" dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
       </div>
-      <div className="flex items-center justify-between gap-1 border-l border-white/20 pl-2 @max-[320px]:gap-0.5 @max-[320px]:pl-1.5" aria-hidden="true">
+      <div className={"flex items-baseline justify-between gap-[8px] mt-[clamp(23px,_7cqw,_32px)] [@container(max-width:_320px)]:gap-[5px] instating-banner-digits"} aria-hidden="true">
         {units.map(unit => (
-          <div className="flex shrink-0 items-end gap-0.5" data-testid="countdown-unit" key={unit.label}>
-            <span className="block overflow-hidden perspective-[180px]"><AnimatedNumber value={unit.value} /></span>
-            <span className="pb-1 text-[10px] leading-snug whitespace-nowrap text-[#ede1fa]">{unit.label}</span>
+          <div className={"flex min-w-[0] items-baseline gap-[6px] [@container(max-width:_320px)]:gap-[3px] instating-banner-unit"} data-testid="countdown-unit" key={unit.label}>
+            <span className={"block perspective-[180px] instating-banner-number-window"}><AnimatedNumber value={unit.value} /></span>
+            <span className={"text-[clamp(11px,_3cqw,_14px)] font-normal whitespace-nowrap instating-banner-unit-label"}>{unit.label === '시간' ? '시' : unit.label}</span>
           </div>
         ))}
       </div>

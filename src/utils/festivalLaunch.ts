@@ -1,6 +1,6 @@
 import { getCountdown } from './countdown.ts'
 
-export const FESTIVAL_START_AT = '2026-10-01T00:00:00+09:00'
+export const FESTIVAL_START_AT = '2026-10-02T00:00:00+09:00'
 export const FESTIVAL_START_TIMESTAMP = Date.parse(FESTIVAL_START_AT)
 
 export function getFestivalCountdown(now = Date.now(), target = FESTIVAL_START_TIMESTAMP) {
