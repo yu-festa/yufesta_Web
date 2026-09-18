@@ -46,7 +46,7 @@ export default function AnnouncementCountdown() {
   return (
     <div className={"mt-[17px] instating-banner-countdown"} role="timer" aria-live="off" aria-label={remaining.ended ? '결과 발표 예정 시간이 되었습니다' : `1차 결과 발표까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
       <div>
-        <span className={"block text-[clamp(14px,_3.5cqw,_17px)] leading-[1.4] font-[750] tracking-[-.4px] instating-banner-countdown-label"}>{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</span>
+        <span className={"block text-[clamp(24px,calc(3.5cqw_+_10px),22px)] leading-[1.4] font-[650] tracking-[-.4px] instating-banner-countdown-label"}>{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</span>
         <time className="sr-only" dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
       </div>
       <div className={"flex items-baseline justify-between gap-[8px] mt-[clamp(23px,_7cqw,_32px)] [@container(max-width:_320px)]:gap-[5px] instating-banner-digits"} aria-hidden="true">
