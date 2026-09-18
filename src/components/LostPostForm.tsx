@@ -65,18 +65,18 @@ export default function LostPostForm({ onRegistered }: { onRegistered: (post: Lo
         <fieldset>
           <legend className="mb-3 text-base font-bold">게시글 종류</legend>
           <div className="flex gap-4">
-            {(['lost', 'found'] as const).map(value => <button key={value} type="button" className="lost-found__filter lost-found__type" aria-pressed={kind === value} onClick={() => setKind(value)}>{lostPostLabels[value]}</button>)}
+            {(['lost', 'found'] as const).map(value => <button key={value} type="button" className={"min-h-[40px] [border:1px_solid_#ddd] rounded-[7px] [padding:5px_15px] bg-white text-[14px] font-semibold [&[aria-pressed='true']]:[border-color:#1554ff] [&[aria-pressed='true']]:bg-[#1554ff] [&[aria-pressed='true']]:text-[white] min-w-[96px] lost-found-filter lost-found-type"} aria-pressed={kind === value} onClick={() => setKind(value)}>{lostPostLabels[value]}</button>)}
           </div>
         </fieldset>
         <div>
           <label className="mb-2 block text-base font-bold" htmlFor="lost-title">제목 <span className="text-[#1554ff]" aria-hidden="true">*</span></label>
-          <input className="lost-found__field" id="lost-title" required maxLength={80} value={title} onChange={event => setTitle(event.target.value)} placeholder="어떤 물건을 찾거나 주우셨나요?" />
+          <input className={"block w-full min-h-[42px] [border:1px_solid_#dedede] rounded-[8px] [padding:10px_13px] bg-white text-[14px] leading-[1.5] [&::placeholder]:text-[#aaa] lost-found-field"} id="lost-title" required maxLength={80} value={title} onChange={event => setTitle(event.target.value)} placeholder="어떤 물건을 찾거나 주우셨나요?" />
         </div>
         <div>
           <label className="mb-2 block text-base font-bold" htmlFor="lost-location">{kind === 'lost' ? '분실 장소' : '발견 장소'} <span className="text-[#1554ff]" aria-hidden="true">*</span></label>
           <div className="relative">
             <LostFoundIcon name="pin" className="pointer-events-none absolute top-3 left-3 size-5 text-[#aaa]" />
-            <input className="lost-found__field pl-10!" id="lost-location" required maxLength={100} value={location} onChange={event => setLocation(event.target.value)} placeholder="예: 공연장 앞" />
+            <input className={"block w-full min-h-[42px] [border:1px_solid_#dedede] rounded-[8px] [padding:10px_13px] bg-white text-[14px] leading-[1.5] [&::placeholder]:text-[#aaa] lost-found-field pl-10!"} id="lost-location" required maxLength={100} value={location} onChange={event => setLocation(event.target.value)} placeholder="예: 공연장 앞" />
           </div>
         </div>
         <div>
@@ -93,7 +93,7 @@ export default function LostPostForm({ onRegistered }: { onRegistered: (post: Lo
         </div>
         <div>
           <label className="mb-2 block text-base font-bold" htmlFor="lost-content">내용 <span className="text-[#1554ff]" aria-hidden="true">*</span></label>
-          <textarea className="lost-found__field min-h-40 resize-y" id="lost-content" required maxLength={3000} value={content} onChange={event => setContent(event.target.value)} placeholder="물건의 특징, 분실·발견 시간 등 자세한 내용을 적어주세요." />
+          <textarea className={"block w-full min-h-[42px] [border:1px_solid_#dedede] rounded-[8px] [padding:10px_13px] bg-white text-[14px] leading-[1.5] [&::placeholder]:text-[#aaa] lost-found-field min-h-40 resize-y"} id="lost-content" required maxLength={3000} value={content} onChange={event => setContent(event.target.value)} placeholder="물건의 특징, 분실·발견 시간 등 자세한 내용을 적어주세요." />
         </div>
       </fieldset>
       {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p>}
