@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import HomeLogo from '../components/HomeLogo'
@@ -7,7 +8,9 @@ import timeTableDemo from '../assets/Main/TimeTableDemo.svg'
 import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
 import find from '../assets/Main/Find.svg'
-import './Main.css'
+
+const tickerFrames: Keyframe[] = [{ transform: 'translateX(0)' }, { transform: 'translateX(-50%)' }]
+const tickerTiming: KeyframeAnimationOptions = { duration: 55000, iterations: Infinity, easing: 'linear' }
 
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff]'
 const sectionLinkClass = 'flex min-h-9 w-full items-center justify-between gap-3 text-left text-[21px] leading-snug font-bold tracking-[-0.65px] [&>svg]:size-5 [&>svg]:shrink-0'
@@ -41,6 +44,9 @@ type Panel = keyof typeof panels
 export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const [cheersPaused, setCheersPaused] = useState(false)
+  const [cheersHovered, setCheersHovered] = useState(false)
+  const [cheersFocused, setCheersFocused] = useState(false)
+  const tickerRef = useMotion<HTMLDivElement>(tickerFrames, tickerTiming, undefined, cheersPaused || cheersHovered || cheersFocused)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -65,14 +71,17 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
           <span><span className="font-bold text-[#1353f2]">예사가락</span><span className="font-medium"> 의 공연까지 </span><span className="font-bold text-[#1353f2]">5</span>분<span className="font-medium"> 남았어요!</span></span>
         </div>
 
-        <section data-testid="instating-banner" data-theme="blue" className="instating-banner relative isolate mt-4 overflow-hidden rounded-[18px] border border-[#d9bdff66] px-5 py-5 text-white @max-[320px]:px-4" aria-labelledby="instating-title">
-          <img className="instating-banner__art" src={instatingBackground} width="1536" height="1024" alt="" draggable={false} />
-          <div className="instating-banner__shade" aria-hidden="true" />
-          <div className="instating-banner__badges flex gap-1.5 text-[10px] leading-normal [&>span]:rounded-full [&>span]:border [&>span]:border-[#e6d1ff4d] [&>span]:bg-[#cbb1ff1a] [&>span]:px-2 [&>span]:py-0.5 [&>span]:backdrop-blur-sm"><span>1차 / 추첨</span><span className="inline-flex items-center gap-1"><span className="text-[6px] leading-none text-[#efbbef]" aria-hidden="true">●</span><span>신청 현황</span></span></div>
-          <span role="heading" aria-level={2} id="instating-title" className="instating-banner__title relative mt-3 block w-fit max-w-full font-['Rubik_One',sans-serif] text-[clamp(18px,7.6cqw,32px)] leading-[1.3] font-normal tracking-[-0.8px] whitespace-nowrap">INSTA - TING</span>
-          <span className="instating-banner__description relative mt-2.5 block max-w-[74%] text-[12px] leading-relaxed font-medium break-keep text-[#f2eaff]">비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</span>
+        <section data-testid="instating-banner" data-theme="blue" className={"relative isolate overflow-hidden mt-[16px] [padding:clamp(18px,_6.4cqw,_28px)] rounded-[18px] bg-[#12112f] text-[#fff] [&_.instating-banner-action:disabled]:text-[#dceaff] [&_.instating-banner-action:disabled]:bg-[#12335e]/60 [&_.instating-banner-action:disabled]:cursor-default [&[data-theme='blue']]:bg-[#071a49] [&[data-theme='blue']_.instating-banner-art]:[filter:hue-rotate(-48deg)_saturate(115%)] [&[data-theme='blue']_.instating-banner-shade]:[background:linear-gradient(100deg,#031b4d99,#064ea83d_55%,#2488ff38)] instating-banner"} aria-labelledby="instating-title">
+          <img className={"absolute inset-[0] z-[-1] w-full h-full pointer-events-none object-cover [object-position:65%_center] instating-banner-art"} src={instatingBackground} width="1536" height="1024" alt="" draggable={false} />
+          <div className={"absolute inset-[0] z-[-1] w-full h-full pointer-events-none [background:linear-gradient(90deg,_#100c2c33,_transparent_75%)] instating-banner-shade"} aria-hidden="true" />
+          <div className={"flex items-center gap-[6px] [&_>_span]:inline-flex [&_>_span]:items-center [&_>_span]:gap-[5px] [&_>_span]:[padding:4px_9px] [&_>_span]:[border:1px_solid_#afcce65c] [&_>_span]:rounded-[30px] [&_>_span]:bg-[#163049bd] [&_>_span]:text-[clamp(9px,_2.5cqw,_11px)] [&_>_span]:leading-[1.3] [&_>_span]:font-[650] [&_>_span]:text-[#e5f0fc] [&_>_span]:[box-shadow:inset_0_1px_1px_#ffffff2b] [&_i]:w-[5px] [&_i]:h-[5px] [&_i]:rounded-full [&_i]:bg-[#a8dcff] instating-banner-badges"}><span>1차 / 추첨</span><span><i aria-hidden="true" />신청 현황</span></div>
+          <h2 id="instating-title" className={"mt-[11px] [font-family:'Rubik_One',_sans-serif] text-[clamp(22px,_8.1cqw,_38px)] font-normal leading-[1.15] tracking-[-.6px] whitespace-nowrap [text-shadow:0_2px_12px_#100b3544] instating-banner-title"}>INSTA - TING</h2>
+          <p className={"mt-[14px] text-[clamp(11px,_2.8cqw,_13px)] leading-[1.55] font-medium instating-banner-description"}>비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</p>
           <AnnouncementCountdown />
-          <button className="instating-banner__apply mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[13.5px] font-bold text-white [&>svg]:size-3.5 [&>svg]:stroke-[2.5]" onClick={onApplyInstating}>{alreadyApplied ? '신청 내역 확인하기' : '신청하기'} <Icon name="arrow" /></button>
+          <div className={"flex gap-[12px] mt-[24px] [@container(max-width:_320px)]:gap-[8px] instating-banner-actions"}>
+            <button type="button" className={"inline-flex justify-between items-center gap-[10px] min-h-[44px] [padding:10px_14px] rounded-[11px] bg-[#123d78]/65 text-[#f0f7ff] border border-[#c9e7ff]/50 backdrop-blur-xl shadow-[inset_0_1px_0_#ffffff33,0_4px_16px_#02133033] text-[clamp(11px,_2.8cqw,_13px)] font-[650] whitespace-nowrap [transition:background_.15s,_transform_.15s] [&_svg]:w-[15px] [&_svg]:h-[15px] [&_svg]:shrink-0 [&_svg]:[stroke-width:3] [&:hover:not(:disabled)]:bg-[#2460a0]/80 [&:active:not(:disabled)]:[transform:translateY(1px)] [@container(max-width:_320px)]:px-[11px] [@container(max-width:_320px)]:gap-[8px] [@media(prefers-reduced-motion:_reduce)]:[transition:none] instating-banner-action"} onClick={onApplyInstating} disabled={alreadyApplied}>{alreadyApplied ? '신청 완료' : '신청하기'}<Icon name="arrow" /></button>
+            <button type="button" className={"inline-flex justify-between items-center gap-[10px] min-h-[44px] [padding:10px_14px] rounded-[11px] bg-[#123d78]/65 text-[#f0f7ff] border border-[#c9e7ff]/50 backdrop-blur-xl shadow-[inset_0_1px_0_#ffffff33,0_4px_16px_#02133033] text-[clamp(11px,_2.8cqw,_13px)] font-[650] whitespace-nowrap [transition:background_.15s,_transform_.15s] [&_svg]:w-[15px] [&_svg]:h-[15px] [&_svg]:shrink-0 [&_svg]:[stroke-width:3] [&:hover:not(:disabled)]:bg-[#2460a0]/80 [&:active:not(:disabled)]:[transform:translateY(1px)] [@container(max-width:_320px)]:px-[11px] [@container(max-width:_320px)]:gap-[8px] [@media(prefers-reduced-motion:_reduce)]:[transition:none] instating-banner-action"} onClick={onOpenProfile}>신청내역 보러가기<Icon name="arrow" /></button>
+          </div>
         </section>
 
         <section className="mt-7" aria-labelledby="timetable-title">
@@ -92,15 +101,15 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
         <section className="mt-10" aria-labelledby="cheers-title">
           <span className="block font-medium text-[#777] text-[13px]">함께 만드는 축제의 순간</span>
           <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={onOpenCheers}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <div className="cheers-ticker" data-paused={cheersPaused}>
-            <div className="cheers-ticker-window" tabIndex={0} role="region" aria-label="응원 메시지. 자동으로 왼쪽으로 이동합니다.">
-              <div className="cheers-ticker-track">
-                {[0, 1].map(copy => <ul key={copy} className="cheers-ticker-list" aria-label={copy === 0 ? '응원 메시지 예시' : undefined} aria-hidden={copy === 1 || undefined}>
+          <div className={"flex items-center mt-[10px] rounded-[10px] bg-[#f6f6f6] overflow-hidden cheers-ticker"} data-paused={cheersPaused} onMouseEnter={() => setCheersHovered(true)} onMouseLeave={() => setCheersHovered(false)}>
+            <div className={"flex-1 min-w-[0] overflow-hidden py-[11px] [&:focus-visible]:[outline:2px_solid_#1554ff] [&:focus-visible]:outline-offset-[-3px] [@media(prefers-reduced-motion:reduce)]:overflow-x-auto cheers-ticker-window"} onFocus={() => setCheersFocused(true)} onBlur={() => setCheersFocused(false)} tabIndex={0} role="region" aria-label="응원 메시지. 자동으로 왼쪽으로 이동합니다.">
+              <div ref={tickerRef} className={"flex w-max cheers-ticker-track"}>
+                {[0, 1].map(copy => <ul key={copy} className={"flex flex-none items-center gap-[24px] pr-[24px] [&_li]:flex [&_li]:flex-none [&_li]:items-center [&_li]:gap-[10px] [&_li]:text-[14px] [&_li]:font-medium [&_li]:whitespace-nowrap [&_li]:leading-[22px] [&_li_>_span]:text-[#1554ff] [&_li_>_span]:text-[18px] [&_li_>_span]:font-bold [@media(prefers-reduced-motion:reduce)]:[&[aria-hidden=true]]:hidden cheers-ticker-list"} aria-label={copy === 0 ? '응원 메시지 예시' : undefined} aria-hidden={copy === 1 || undefined}>
                   {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
                 </ul>)}
               </div>
             </div>
-            <button type="button" className="cheers-ticker-toggle" onClick={() => setCheersPaused(paused => !paused)} aria-label={cheersPaused ? '응원글 자동 이동 재생' : '응원글 자동 이동 일시정지'} aria-pressed={cheersPaused}><span aria-hidden="true">{cheersPaused ? '▶' : 'Ⅱ'}</span></button>
+            <button type="button" className={"grid place-items-center w-[40px] min-h-[44px] shrink-0 text-[#7c8799] bg-[#f6f6f6] cursor-pointer text-[12px] [&:focus-visible]:[outline:2px_solid_#1554ff] [&:focus-visible]:outline-offset-[-3px] [@media(prefers-reduced-motion:reduce)]:hidden cheers-ticker-toggle"} onClick={() => setCheersPaused(paused => !paused)} aria-label={cheersPaused ? '응원글 자동 이동 재생' : '응원글 자동 이동 일시정지'} aria-pressed={cheersPaused}><span aria-hidden="true">{cheersPaused ? '▶' : 'Ⅱ'}</span></button>
           </div>
         </section>
 
