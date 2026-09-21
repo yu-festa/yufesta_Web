@@ -16,6 +16,7 @@ import { resolveFestivalStart } from './utils/festivalLaunch'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
+const allowRepeatApplication = import.meta.env.DEV && import.meta.env.VITE_INSTATING_REPEAT_TEST === 'true'
 
 type Page = 'entry' | 'main' | 'timetable' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
 
@@ -131,8 +132,8 @@ const App = () => {
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
         {page === 'profile' && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} onResult={openResult} onApply={() => openPage('instating-apply')} /> : <Login onBack={closePage} onHome={goHome} />)}
         {page === 'instating-result' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={profileAccess.user.participations.find(item => encodeURIComponent(item.id) === resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} />}
-        {page === 'instating-apply' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} />}
-        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} onApplyInstating={() => alreadyApplied ? openProfile() : openPage('login')} onOpenProfile={() => openPage(profileAccess.page)} />}
+        {page === 'instating-apply' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} allowRepeat={allowRepeatApplication} />}
+        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied && !allowRepeatApplication} onApplyInstating={() => allowRepeatApplication ? openPage('instating-apply') : alreadyApplied ? openProfile() : openPage('login')} onOpenProfile={() => openPage(profileAccess.page)} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>
