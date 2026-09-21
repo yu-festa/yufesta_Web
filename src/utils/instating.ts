@@ -46,12 +46,13 @@ export class AlreadyAppliedError extends Error {
   constructor() { super('이미 인스타팅 신청을 완료했어요.'); this.name = 'AlreadyAppliedError' }
 }
 
-export async function saveApplication(application: InstatingApplication, storage: Pick<Storage, 'getItem' | 'setItem'> = window.localStorage): Promise<SavedApplication> {
+export async function saveApplication(application: InstatingApplication, storage: Pick<Storage, 'getItem' | 'setItem'> = window.localStorage, options: { allowRepeat?: boolean } = {}): Promise<SavedApplication> {
   const saveOnce = () => {
     // Recheck immediately before writing, including forms opened before another tab submitted.
-    if (parseApplications(storage.getItem(APPLICATION_STORAGE_KEY)).length > 0) throw new AlreadyAppliedError()
+    const existing = parseApplications(storage.getItem(APPLICATION_STORAGE_KEY))
+    if (existing.length > 0 && !options.allowRepeat) throw new AlreadyAppliedError()
     const record = { ...application, nickname: application.nickname.trim(), id: crypto.randomUUID(), submittedAt: new Date().toISOString() }
-    storage.setItem(APPLICATION_STORAGE_KEY, JSON.stringify([record]))
+    storage.setItem(APPLICATION_STORAGE_KEY, JSON.stringify([record, ...existing]))
     return record
   }
   // Serialize submissions across tabs on browsers supporting Web Locks.

@@ -14,7 +14,7 @@ const interests = ['술', '공연', '운동', '게임', '카페', '영화', '음
 const ages = ['20 - 21세', '22 - 24세', '25 - 27세', '28세 이상']
 const consentLabels = ['[필수] 개인정보 수집·이용 동의', '[필수] 서비스 이용약관 동의', '[필수] 만 19세 이상입니다']
 
-export default function InstatingApply({ onHome, onProfile, alreadyApplied = false }: { onHome: () => void; onProfile: () => void; alreadyApplied?: boolean }) {
+export default function InstatingApply({ onHome, onProfile, alreadyApplied = false, allowRepeat = false }: { onHome: () => void; onProfile: () => void; alreadyApplied?: boolean; allowRepeat?: boolean }) {
   const [step, setStep] = useState(1)
   const [application, setApplication] = useState<Application>({
     nickname: '', instagram: '', gender: '', age: '', tags: [], performance: '', introduction: '', multipleMatches: false,
@@ -45,7 +45,7 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
   async function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting.current || step === 4) return
-    if (alreadyApplied || duplicate) { setDuplicate(true); return }
+    if (!allowRepeat && (alreadyApplied || duplicate)) { setDuplicate(true); return }
     if (step === 1 && !application.nickname.trim()) {
       setError('닉네임을 입력해 주세요.')
       return
@@ -62,7 +62,7 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
     if (step === 3) {
       submitting.current = true
       setSaving(true)
-      try { await saveApplication(application) }
+      try { await saveApplication(application, window.localStorage, { allowRepeat }) }
       catch (reason) {
         if (reason instanceof AlreadyAppliedError) setDuplicate(true)
         else setError('브라우저에 저장하지 못했어요. 저장 공간과 브라우저 설정을 확인한 후 다시 시도해주세요.')
@@ -78,7 +78,7 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
     else { setError(''); setStep(current => current - 1) }
   }
 
-  if ((alreadyApplied || duplicate) && step !== 4) return (
+  if (!allowRepeat && (alreadyApplied || duplicate) && step !== 4) return (
     <AppLayout header={<InstatingHeader onHome={onHome} onProfile={onProfile} />}>
       <section className={"text-[#172039] [padding:20px_0_8px] [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[3px] [&_input:focus-visible]:[outline:2px_solid_#1554ff] [&_input:focus-visible]:outline-offset-[3px] [&_select:focus-visible]:[outline:2px_solid_#1554ff] [&_select:focus-visible]:outline-offset-[3px] [&_textarea:focus-visible]:[outline:2px_solid_#1554ff] [&_textarea:focus-visible]:outline-offset-[3px] text-center [&_h2]:text-[25px] [&_h2]:font-[750] [&_h2]:tracking-[-1px] [&_h2]:mt-[12px] [&_>_p]:text-[13px] [&_>_p]:leading-[1.8] [&_>_p]:text-[#8390a5] [&_>_p]:mt-[14px] [@media(prefers-reduced-motion:reduce)]:[&_*]:[transition:none] instating-apply instating-success"}>
         <span ref={heartRef} className={"grid place-items-center w-[96px] h-[96px] rounded-full [margin:0_auto_22px] bg-[#eef4ff] text-[#1554ff] text-[70px] instating-success-mark"} aria-hidden="true">♡</span>
@@ -132,17 +132,20 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
               <p id="interest-help" className={"text-[#838c9e] text-[11px] leading-[1.6] mt-[-4px] mb-[14px] [&_span]:float-right [&_span]:text-[#1554ff] instating-help instating-help-top"}>최대 3개까지 선택할 수 있어요 <span>{application.tags.length} / 3</span></p>
               <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interests.map(tag => <label key={tag} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag)} disabled={application.tags.length >= 3 && !application.tags.includes(tag)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag] : application.tags.filter(item => item !== tag))} /><span>{tag}</span></label>)}</div>
             </fieldset>
-            <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
+            <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_48px_12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
               <label htmlFor="instating-performance">보고 싶은 공연</label>
               <p id="performance-help" className={"text-[#838c9e] text-[11px] leading-[1.6] mt-[-4px] mb-[14px] [&_span]:float-right [&_span]:text-[#1554ff] instating-help instating-help-top"}>축제에서 보고 싶은 공연을 선택해주세요</p>
-              <select id="instating-performance" value={application.performance} onChange={event => update('performance', event.target.value)} aria-describedby="performance-help">
-                <option value="">선택 안 함</option>
-                {performances.map(performance => <option key={performance.id} value={performance.id}>{performance.name} · {performance.start}</option>)}
-              </select>
+              <div className="relative">
+                <select id="instating-performance" className="appearance-none" value={application.performance} onChange={event => update('performance', event.target.value)} aria-describedby="performance-help">
+                  <option value="">선택 안 함</option>
+                  {performances.map(performance => <option key={performance.id} value={performance.id}>{performance.name} · {performance.start}</option>)}
+                </select>
+                <svg className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-[#344054]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </div>
             </div>
             <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
               <label htmlFor="instating-introduction">한 줄 소개</label>
-              <div className={"w-full [border:1px_solid_#e0e4ec] rounded-[8px] bg-white relative pb-[24px] [&_textarea]:w-full [&_textarea]:block [&_textarea]:p-[14px] [&_textarea]:resize-y [&_textarea]:text-[16px] [&_textarea]:min-h-[90px] [&_>_span]:absolute [&_>_span]:bottom-[10px] [&_>_span]:right-[14px] [&_>_span]:text-[11px] [&_>_span]:text-[#838c9e] instating-textarea"}><textarea id="instating-introduction" value={application.introduction} onChange={event => update('introduction', event.target.value)} placeholder="함께할 친구에게 나를 소개해주세요!" maxLength={40} rows={3} aria-describedby="introduction-count" /><span id="introduction-count">{application.introduction.length} / 40</span></div>
+              <div className={"w-full [border:1px_solid_#e0e4ec] rounded-[8px] bg-white relative pb-[24px] [&_textarea]:w-full [&_textarea]:block [&_textarea]:p-[14px] [&_textarea]:resize-none [&_textarea]:text-[16px] [&_textarea]:min-h-[90px] [&_>_span]:absolute [&_>_span]:bottom-[10px] [&_>_span]:right-[14px] [&_>_span]:text-[11px] [&_>_span]:text-[#838c9e] instating-textarea"}><textarea id="instating-introduction" value={application.introduction} onChange={event => update('introduction', event.target.value)} placeholder="함께할 친구에게 나를 소개해주세요!" maxLength={40} rows={3} aria-describedby="introduction-count" /><span id="introduction-count">{application.introduction.length} / 40</span></div>
             </div>
             <label className={"flex gap-[14px] items-center bg-[#f6f8fc] [border:1px_solid_#eaf0fb] p-[18px] rounded-[8px] cursor-pointer [&_input]:w-[20px] [&_input]:h-[20px] [&_input]:shrink-0 [&_input]:accent-[#1554ff] [&_strong]:text-[13px] [&_strong]:font-[650] [&_small]:block [&_small]:mt-[5px] [&_small]:text-[11px] [&_small]:text-[#838c9e] [&_small]:leading-[1.6] instating-multiple"}><input type="checkbox" checked={application.multipleMatches} onChange={event => update('multipleMatches', event.target.checked)} /><span><strong>여러 명과 매칭해도 좋아요</strong><small>최대 3명과 매칭될 수 있어요.<br />선택하지 않으면 1명과 매칭돼요.</small></span></label>
           </div>}

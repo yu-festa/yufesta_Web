@@ -18,6 +18,21 @@ export type LostPost = LostPostDraft & {
   createdAt: number
 }
 
+export type LostComment = {
+  id: string
+  postId: string
+  content: string
+  createdAt: number
+}
+
+export const MAX_LOST_COMMENT_LENGTH = 500
+
+export function validateLostComment(content: string): string | null {
+  if (!content.trim()) return '댓글을 입력해 주세요.'
+  if (content.trim().length > MAX_LOST_COMMENT_LENGTH) return '댓글은 500자 이내로 입력해 주세요.'
+  return null
+}
+
 export const lostPostLabels = { lost: '찾고 있어요', found: '주웠어요' } as const
 export const MAX_LOST_PHOTOS = 5
 

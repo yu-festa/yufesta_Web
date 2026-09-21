@@ -4,7 +4,7 @@ import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import HomeLogo from '../components/HomeLogo'
 import { initialCheers } from '../data/cheers'
-import timeTableDemo from '../assets/Main/TimeTableDemo.svg'
+import { performanceDetails } from '../data/performanceDetails'
 import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
 import find from '../assets/Main/Find.svg'
@@ -31,17 +31,13 @@ function Icon({ name, className = '' }: { name: keyof typeof iconPaths; classNam
   return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name]}</svg>
 }
 
-// 백엔드와 상세 페이지 연결 전 사용하는 화면 예시입니다.
-const demoPerformances = Array.from({ length: 3 }, (_, index) => ({
-  id: `demo-${index}`, title: 'COUNTDOWN FANTASY 2025-2026', date: '2025.12.20 - 2025.12.21',
-}))
 const cheers = [...new Set(['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔다 !!', ...initialCheers.map(cheer => cheer.message)])].slice(0, 9)
 const panels = {
   notifications: { title: '알림', description: '새로운 알림이 없어요.' },
 }
 type Panel = keyof typeof panels
 
-export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false }: { onHome: () => void; onOpenTimetable: () => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean }) {
+export default function Main({ onHome, onOpenTimetable, onOpenPerformance, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false }: { onHome: () => void; onOpenTimetable: () => void; onOpenPerformance: (id: string) => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean }) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null)
   const [cheersPaused, setCheersPaused] = useState(false)
   const [cheersHovered, setCheersHovered] = useState(false)
@@ -88,9 +84,9 @@ export default function Main({ onHome, onOpenTimetable, onOpenCheers, onOpenMap,
           <span className="block font-medium text-[#777] text-[13px]">공연 라인업과 시간을 알려드려요</span>
           <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={onOpenTimetable}><span className="font-bold text-[20px]">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 타임테이블 예시 목록" tabIndex={0}>
-            {demoPerformances.map(performance => (
-              <button className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={onOpenTimetable}>
-                <img src={timeTableDemo} width="132" height="176" alt="" />
+            {performanceDetails.map(performance => (
+              <button type="button" className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left [&>img]:block [&>img]:aspect-3/4 [&>img]:h-auto [&>img]:w-full [&>img]:object-cover" key={performance.id} onClick={() => onOpenPerformance(performance.id)}>
+                <img src={performance.poster} width="132" height="176" alt="" />
                 <span role="heading" aria-level={3} className="mt-2 block text-[14px] leading-snug font-semibold tracking-[-0.35px] [overflow-wrap:normal]">{performance.title}</span>
                 <span className="mt-3.5 block text-[13px] leading-normal font-medium whitespace-nowrap text-[#858585]">{performance.date}</span>
               </button>

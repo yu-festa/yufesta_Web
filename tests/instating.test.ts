@@ -21,6 +21,17 @@ test('동시 제출 두 건 중 한 건만 저장되고 기존 데이터가 덮�
   assert.equal(parseApplications(value).length, 1)
 })
 
+test('재신청 테스트 옵션은 기존 내역을 보존하고 옵션을 끄면 다시 중복을 차단한다', async () => {
+  let value: string | null = null
+  const storage = { getItem: () => value, setItem: (_key: string, next: string) => { value = next } }
+  const first = await saveApplication(application, storage)
+  const second = await saveApplication({ ...application, nickname: '재신청 테스트' }, storage, { allowRepeat: true })
+  assert.notEqual(first.id, second.id)
+  assert.deepEqual(parseApplications(value), [second, first])
+  await assert.rejects(saveApplication(application, storage), AlreadyAppliedError)
+  assert.deepEqual(parseApplications(value), [second, first])
+})
+
 test('저장 실패는 신청 완료로 처리하지 않으며 다시 저장할 수 있다', async () => {
   let value: string | null = null
   let fail = true
