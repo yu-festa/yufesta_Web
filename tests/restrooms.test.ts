@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { filterRestroomLocations, floorLabel, getRestroomBuilding, getRestroomFloors, restroomBuildings, restroomDetailLevel, restroomSources, unverifiedRestroomBuildings } from '../src/data/restrooms.ts'
 import { getFilteredPlaces } from '../src/data/festivalMap.ts'
+import { distanceInMeters, getNearbyRestrooms } from '../src/utils/mapPlaces.ts'
 
 test('공식 도면에서 확인된 19개 실내 위치는 원본 도면과 연결된다', () => {
   const locations = restroomBuildings.flatMap(building => building.locations)
@@ -71,4 +72,23 @@ test('층만 알려진 시설과 건물만 알려진 시설에 실내 위치를 
     assert.equal(restroomDetailLevel(building), '건물만 확인')
     assert.deepEqual(building.locations, [])
   }
+})
+
+test('직선 거리는 미터 단위로 계산하며 같은 지점과 좌표 순서를 처리한다', () => {
+  assert.equal(distanceInMeters([35.83, 128.75], [35.83, 128.75]), 0)
+  assert.ok(Math.abs(distanceInMeters([0, 0], [0, 1]) - 111_195) < 1)
+  assert.ok(Math.abs(distanceInMeters([60, 0], [60, 1]) - 55_597) < 1)
+  assert.equal(distanceInMeters([35.83, 128.75], [35.84, 128.76]), distanceInMeters([35.84, 128.76], [35.83, 128.75]))
+})
+
+test('공연장 주변 500m의 확인된 화장실만 가까운 순서로 제공한다', () => {
+  const stage = getFilteredPlaces('stage').find(place => place.id === 'main-stage')!
+  const nearby = getNearbyRestrooms(stage)
+  assert.equal(nearby[0].place.id, 'student-support-restroom')
+  assert.ok(nearby[0].distance > 120 && nearby[0].distance < 140)
+  assert.ok(nearby.every(({ place, distance }, index) => place.category === 'restroom'
+    && distance <= 500 && (index === 0 || distance >= nearby[index - 1].distance)))
+  assert.ok(!nearby.some(({ place }) => place.id === 'science-library-restroom'))
+  assert.deepEqual(getNearbyRestrooms(stage, 100), [])
+  assert.deepEqual(getNearbyRestrooms(nearby[0].place), [])
 })
