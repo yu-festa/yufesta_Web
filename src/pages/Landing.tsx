@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import { useMotion } from '../hooks/useMotion'
 import { getFestivalCountdown } from '../utils/festivalLaunch'
+import CountdownDigits from '../components/CountdownDigits'
 import mainLogo from '../assets/mainlogo.svg'
 import heroBackground from '../assets/Landing/starfield-blue.png'
 import instatingArtwork from '../assets/Main/InstatingBackground.webp'
@@ -39,13 +40,8 @@ function LandingCountdown({ target }: { target: number }) {
     return () => { clearInterval(timer); window.removeEventListener('focus', update); document.removeEventListener('visibilitychange', update) }
   }, [target])
   const units = [{ value: remaining.days, label: '일' }, { value: remaining.hours, label: '시' }, { value: remaining.minutes, label: '분' }, { value: remaining.seconds, label: '초' }]
-  return <div className="relative isolate grid grid-cols-4 gap-2 py-6 before:pointer-events-none before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-[radial-gradient(ellipse_at_center,#04163080_0%,transparent_72%)] @max-[350px]:gap-1.5" role="timer" aria-live="off" aria-label={`축제까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
-    {units.map(unit => <div className="flex min-w-0 items-end gap-1 @max-[350px]:gap-0.5" key={unit.label} aria-hidden="true">
-      <div className="flex min-w-0 flex-1 gap-1 @max-[350px]:gap-0.5">
-        {String(unit.value).padStart(2, '0').split('').map((digit, index) => <span key={index} className="grid h-[clamp(48px,14cqw,64px)] min-w-0 flex-1 place-items-center rounded-xl border border-[#b9d9ff]/15 bg-linear-to-b from-[#a7d4ff]/12 to-[#102d58]/25 text-[clamp(24px,7.5cqw,36px)] leading-none font-semibold tabular-nums text-[#f1f8ff] shadow-[inset_0_1px_0_#d9edff1a,0_4px_16px_#0313291a] backdrop-blur-[3px] [text-shadow:0_0_14px_#8ac7ff40]">{digit}</span>)}
-      </div>
-      <span className="mb-1.5 shrink-0 text-[11px] leading-none font-normal text-[#c8ddf5] [text-shadow:0_1px_6px_#031329]">{unit.label}</span>
-    </div>)}
+  return <div role="timer" aria-live="off" aria-label={`축제까지 ${units.map(unit => `${unit.value}${unit.label}`).join(' ')}`}>
+    <CountdownDigits units={units} className="py-6" />
   </div>
 }
 

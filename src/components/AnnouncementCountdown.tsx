@@ -1,17 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ANNOUNCEMENT_TIMESTAMP, getCountdown } from '../utils/countdown'
-import { useMotion } from '../hooks/useMotion'
-
-const digitFrames = [
-  { opacity: .3, transform: 'translateY(-5px) rotateX(55deg)' },
-  { opacity: 1, transform: 'translateY(0) rotateX(0)' },
-]
-const digitTiming = { duration: 380, easing: 'cubic-bezier(.2, .7, .3, 1)' }
-
-function AnimatedNumber({ value }: { value: number }) {
-  const ref = useMotion<HTMLElement>(digitFrames, digitTiming, value)
-  return <span ref={ref} className={"block text-[clamp(30px,_10.5cqw,_48px)] font-[750] leading-[1.1] tracking-[-1.3px] tabular-nums instating-banner-number"}>{String(value).padStart(2, '0')}</span>
-}
+import CountdownDigits from './CountdownDigits'
 
 const announcementLabel = new Intl.DateTimeFormat('ko-KR', {
   timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
@@ -38,7 +27,7 @@ export default function AnnouncementCountdown() {
 
   const units = [
     { label: '일', value: remaining.days },
-    { label: '시간', value: remaining.hours },
+    { label: '시간', displayLabel: '시', value: remaining.hours },
     { label: '분', value: remaining.minutes },
     { label: '초', value: remaining.seconds },
   ]
@@ -49,14 +38,7 @@ export default function AnnouncementCountdown() {
         <span className={"block text-[clamp(24px,calc(3.5cqw_+_10px),22px)] leading-[1.4] font-[650] tracking-[-.4px] instating-banner-countdown-label"}>{remaining.ended ? '발표 예정 시간 도착' : '1차 결과 발표까지'}</span>
         <time className="sr-only" dateTime={new Date(ANNOUNCEMENT_TIMESTAMP).toISOString()}>{announcementLabel}</time>
       </div>
-      <div className={"flex items-baseline justify-between gap-[8px] mt-[clamp(23px,_7cqw,_32px)] [@container(max-width:_320px)]:gap-[5px] instating-banner-digits"} aria-hidden="true">
-        {units.map(unit => (
-          <div className={"flex min-w-[0] items-baseline gap-[6px] [@container(max-width:_320px)]:gap-[3px] instating-banner-unit"} data-testid="countdown-unit" key={unit.label}>
-            <span className={"block perspective-[180px] instating-banner-number-window"}><AnimatedNumber value={unit.value} /></span>
-            <span className={"text-[clamp(11px,_3cqw,_14px)] font-normal whitespace-nowrap instating-banner-unit-label"}>{unit.label === '시간' ? '시' : unit.label}</span>
-          </div>
-        ))}
-      </div>
+      <CountdownDigits units={units} className="mt-[clamp(23px,7cqw,32px)] instating-banner-digits" />
     </div>
   )
 }
