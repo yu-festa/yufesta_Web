@@ -6,11 +6,19 @@ import type { MatchResult } from '../utils/instating'
 import type { InstatingParticipation } from '../utils/profile'
 import purmaSuccess from '../assets/Instating/purma-success.png'
 import purmaUnmatched from '../assets/Instating/purma-unmatched.png'
-import closeIcon from '../assets/Instating/close.svg'
 import copyIcon from '../assets/Instating/copy.svg'
 
 const tapFrames: Keyframe[] = [{ transform: 'scale(.96) rotate(-1deg)', offset: 0 }, { transform: 'scale(1.015) rotate(1deg)', offset: .6 }, { transform: 'scale(1) rotate(0)', offset: 1 }]
 const tapTiming: KeyframeAnimationOptions = { duration: 280, easing: 'ease-out' }
+const heartbeatFrames: Keyframe[] = [
+  { transform: 'scale(1)', offset: 0 },
+  { transform: 'scale(1.16)', offset: .12 },
+  { transform: 'scale(1)', offset: .24 },
+  { transform: 'scale(1.1)', offset: .36 },
+  { transform: 'scale(1)', offset: .5 },
+  { transform: 'scale(1)', offset: 1 },
+]
+const heartbeatTiming: KeyframeAnimationOptions = { duration: 1600, iterations: Infinity, easing: 'ease-in-out' }
 const openFrames: Keyframe[] = [{ opacity: 0, transform: 'perspective(800px) rotateY(-16deg) translateY(12px)' }, { opacity: 1, transform: 'none' }]
 const openTiming: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }
 
@@ -22,6 +30,7 @@ function Reveal({ result, isDemo, onClose }: { result: MatchResult; isDemo: bool
   const tapRef = useMotion<HTMLSpanElement>(tapFrames, tapTiming, taps)
   const openRef = useMotion<HTMLDivElement>(openFrames, openTiming, revealed)
   const pending = result.status === 'pending'
+  const heartbeatRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, pending)
   useEffect(() => { if (revealed) heading.current?.focus({ preventScroll: true }) }, [revealed])
 
   async function copyInstagram(instagram: string) {
@@ -34,7 +43,7 @@ function Reveal({ result, isDemo, onClose }: { result: MatchResult; isDemo: bool
     <h1 ref={heading} tabIndex={-1}>{pending ? '아직 설렘을 준비 중이에요' : !revealed ? '나의 매칭 상대는?' : result.status === 'matched' ? '매칭 성공!' : '이번엔 아쉽게도…'}</h1>
     <p className={"mt-[10px] text-[#8690a4] text-[12px] leading-[1.8] break-keep match-description"}>{pending ? '결과 발표까지 조금만 기다려주세요.' : !revealed ? '두근두근, 카드를 5번 두드려주세요.' : result.status === 'matched' ? '축제를 함께할 새로운 친구를 만났어요.' : '다음에는 꼭 좋은 인연이 찾아올 거예요.'}</p>
 
-    {pending ? <div className={"flex flex-col items-center [margin:28px_auto_0] [padding:32px_20px] bg-[#fff] [border:1px_solid_#e2e8f7] rounded-[16px] max-w-[330px] [&_>_span]:text-[#8cafff] [&_>_span]:text-[72px] [&_strong]:text-[13px] [&_strong]:text-[#7c8ba5] [&_strong]:mt-[16px] [&_b]:text-[26px] [&_b]:text-[#1554ff] [&_b]:mt-[10px] [&_p]:text-[12px] [&_p]:text-[#8a95a9] [&_p]:leading-[1.8] [&_p]:mt-[20px] match-pending"}><span aria-hidden="true">♡</span><strong>매칭 결과 발표</strong><b>시간 미정</b><p>발표가 완료되면 이곳에서<br />나의 결과 카드를 열어볼 수 있어요.</p></div> : !revealed ? <>
+    {pending ? <div className={"flex flex-col items-center [margin:28px_auto_0] [padding:32px_20px] bg-[#fff] [border:1px_solid_#e2e8f7] rounded-[16px] max-w-[330px] [&_>_span]:text-[#8cafff] [&_>_span]:text-[72px] [&_strong]:text-[13px] [&_strong]:text-[#7c8ba5] [&_strong]:mt-[16px] [&_b]:text-[26px] [&_b]:text-[#1554ff] [&_b]:mt-[10px] [&_p]:text-[12px] [&_p]:text-[#8a95a9] [&_p]:leading-[1.8] [&_p]:mt-[20px] match-pending"}><span ref={heartbeatRef} className="inline-block origin-center" aria-hidden="true">♡</span><strong>매칭 결과 발표</strong><b>시간 미정</b><p>발표가 완료되면 이곳에서<br />나의 결과 카드를 열어볼 수 있어요.</p></div> : !revealed ? <>
       <button type="button" className={"block w-[min(100%,280px)] h-[356px] [margin:32px_auto_0] p-[7px] [border:3px_solid_#fff] rounded-[26px] [background:linear-gradient(140deg,#e4ecff,#fff_38%,#b9caff)] [box-shadow:0_16px_44px_#7187dc33,inset_-3px_-3px_10px_#a3b9f388] cursor-pointer touch-manipulation [-webkit-tap-highlight-color:transparent] match-reveal-card"} onClick={() => setTaps(nextRevealTap)} aria-label={`결과 카드 두드리기, ${taps} / ${REVEAL_TAPS}회`}>
         <span className={"flex relative flex-col items-center justify-center h-full rounded-[18px] overflow-hidden [background:radial-gradient(circle_at_50%_52%,#f2d9efb3,transparent_55%),linear-gradient(135deg,#f6f8ff,#dce6ff)] [box-shadow:inset_2px_2px_12px_#fff] [&_strong]:z-[1] [&_strong]:text-[21px] [&_strong]:text-[#3b61b8] [&_strong]:tracking-[-.7px] [&_strong]:[text-shadow:0_1px_14px_#fff] match-card-inner"} key={taps} ref={tapRef}>
           <span className={"absolute top-[24px] text-[9px] font-semibold tracking-[1.7px] text-[#8096cd] match-card-edition"}>YU FESTA · INSTA-TING</span>
@@ -64,8 +73,13 @@ export default function InstatingResult({ participation, isPreview, onClose }: {
   const [demoStatus, setDemoStatus] = useState<'matched' | 'unmatched' | 'pending'>('matched')
   const isDemo = isPreview && participation?.isDemo === true
   const result: MatchResult = isDemo ? demoStatus === 'matched' ? { status: 'matched', partners: [{ nickname: '축제친구', instagram: 'festa_friend_demo' }] } : { status: demoStatus } : participation?.result ?? { status: 'pending' }
-  return <AppLayout padded={false} header={<div className={"h-[64px] grid grid-cols-[40px_1fr_40px] items-center text-center text-[16px] [&_button]:grid [&_button]:place-items-center [&_button]:w-[40px] [&_button]:h-[40px] [&_button]:cursor-pointer [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[4px] match-header"}><span /><strong>결과 조회</strong><button type="button" onClick={onClose} aria-label="결과 조회 닫기"><img src={closeIcon} width="24" height="24" alt="" /></button></div>}>
-    <div className={"min-h-[calc(100dvh_-_64px)] [background:radial-gradient(ellipse_at_20%_35%,#edf2ff,transparent_70%),#f7f8ff] mb-[calc(-1_*_var(--app-content-padding))] [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[4px] [&_a:focus-visible]:[outline:2px_solid_#1554ff] [&_a:focus-visible]:outline-offset-[4px] match-page"}>
+  return <AppLayout padded={false}>
+    <div className={"min-h-[calc(100dvh_-_env(safe-area-inset-top,0px))] [background:radial-gradient(ellipse_at_20%_35%,#edf2ff,transparent_70%),#f7f8ff] mb-[calc(-1_*_var(--app-content-padding))] [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[4px] [&_a:focus-visible]:[outline:2px_solid_#1554ff] [&_a:focus-visible]:outline-offset-[4px] match-page"}>
+      <div className="px-4 pt-3">
+        <button type="button" onClick={onClose} aria-label="이전 화면으로 돌아가기" className="grid size-11 cursor-pointer place-items-center text-[#344563]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m14 5-7 7 7 7" /></svg>
+        </button>
+      </div>
       {isDemo && <div className={"flex flex-wrap items-center justify-between gap-[8px] [padding:12px_20px] bg-[#eef2fb] [border-top:1px_solid_#e8edf7] text-[10px] text-[#738198] [&_>_div]:flex [&_>_div]:gap-[4px] [&_button]:[padding:6px_10px] [&_button]:rounded-[5px] [&_button]:cursor-pointer [&_[aria-pressed=true]]:text-[#1554ff] [&_[aria-pressed=true]]:bg-[#fff] [&_[aria-pressed=true]]:[box-shadow:0_2px_5px_#284a8410] [&_[aria-pressed=true]]:font-bold match-preview-controls"}><span>결과 화면 미리보기</span><div>{(['matched', 'unmatched', 'pending'] as const).map(status => <button key={status} type="button" aria-pressed={demoStatus === status} onClick={() => setDemoStatus(status)}>{status === 'matched' ? '성공' : status === 'unmatched' ? '실패' : '발표 대기'}</button>)}</div></div>}
       {participation ? <Reveal key={`${participation.id}-${demoStatus}`} result={result} isDemo={isDemo} onClose={onClose} /> : <section className={"[padding:60px_24px] text-center [&_h1]:text-[22px] [&_h1]:font-bold [&_p]:mt-[14px] [&_p]:text-[13px] [&_p]:text-[#7c8ba5] match-missing"}><h1>신청 내역을 찾을 수 없어요</h1><p>마이페이지에서 참여 내역을 다시 확인해주세요.</p><button type="button" className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} onClick={onClose}>마이페이지로 돌아가기</button></section>}
     </div>
