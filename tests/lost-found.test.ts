@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { filterLostPosts, formatLostPostTime, validateLostPost } from '../src/utils/lostFound.ts'
+import { filterLostPosts, formatLostPostTime, validateLostComment, validateLostPost } from '../src/utils/lostFound.ts'
 import type { LostPost, LostPostDraft } from '../src/utils/lostFound.ts'
 
 const draft: LostPostDraft = { kind: 'lost', title: '흰색 에어팟을 찾습니다', location: '공연장 앞', content: '흰색 케이스에 파란 스티커가 있어요.', photos: [] }
+
+test('댓글은 빈 내용과 공백만 있는 내용을 거부하고 500자까지 허용한다', () => {
+  assert.ok(validateLostComment(''))
+  assert.ok(validateLostComment(' \n\t '))
+  assert.equal(validateLostComment('학생회관 안내 데스크에 맡겼어요.\n확인해 주세요!'), null)
+  assert.equal(validateLostComment('가'.repeat(500)), null)
+  assert.ok(validateLostComment('가'.repeat(501)))
+  assert.equal(validateLostComment(`  ${'가'.repeat(500)}  `), null)
+})
 
 test('사진 없는 글은 허용하고 공백뿐인 필수 입력은 거부한다', () => {
   assert.equal(validateLostPost(draft), null)
