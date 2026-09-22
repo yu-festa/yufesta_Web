@@ -10,7 +10,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
-      includeAssets: ['favicon.svg', 'apple-touch-icon-yufesta-v2.png', 'push-sw.js'],
+      includeAssets: [
+        'favicon-yufesta-v2-16x16.png',
+        'favicon-yufesta-v2-32x32.png',
+        'apple-touch-icon-yufesta-v2.png',
+        'push-sw.js',
+      ],
       manifest: {
         id: '/',
         name: 'YU FESTA',
