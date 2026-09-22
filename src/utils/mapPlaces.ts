@@ -11,9 +11,9 @@ export function distanceInMeters(from: Coordinates, to: Coordinates) {
   return 6_371_000 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))))
 }
 
-export function getNearbyRestrooms(stage: FestivalPlace, radius = 500) {
+export function getNearbyRestrooms(stage: FestivalPlace, radius = 500, source: FestivalPlace[] = festivalPlaces) {
   if (stage.category !== 'stage') return []
-  return festivalPlaces
+  return source
     .filter(place => place.category === 'restroom')
     .map(place => ({ place, distance: distanceInMeters(stage.position, place.position) }))
     .filter(({ distance }) => distance <= radius)

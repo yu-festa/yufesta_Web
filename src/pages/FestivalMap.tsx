@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { festivalPlaces, getFilteredPlaces, mapCategories, mapSources } from '../data/festivalMap'
 import type { MapFilter } from '../data/festivalMap'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
 import { useKakaoFestivalMap } from '../hooks/useKakaoFestivalMap'
 import RestroomGuide from '../components/RestroomGuide'
+import { getPlace, getPlaces, toFestivalPlace, withPlaceDetail } from '../api/places'
+import type { FestivalPlace } from '../data/festivalMap'
 import { distanceInMeters, formatMapDistance, getNearbyRestrooms } from '../utils/mapPlaces'
 
 const roundButton = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white text-[#344054] shadow-[0_2px_12px_#24375224] disabled:cursor-wait disabled:opacity-60'
@@ -26,16 +28,49 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [nearbyStageId, setNearbyStageId] = useState<string | null>(null)
   const [restroomGuide, setRestroomGuide] = useState<{ buildingId: string | null } | null>(null)
+  const [allPlaces, setAllPlaces] = useState<FestivalPlace[]>(festivalPlaces)
+  const [placeDetails, setPlaceDetails] = useState<Record<string, FestivalPlace>>({})
+  const [usingServerPlaces, setUsingServerPlaces] = useState(false)
+  const [placeDataMessage, setPlaceDataMessage] = useState('장소 정보를 서버에서 확인하고 있어요…')
   const { location, requestLocation } = useCurrentLocation()
-  const nearbyStage = festivalPlaces.find(place => place.id === nearbyStageId && place.category === 'stage')
-  const nearbyRestrooms = useMemo(() => nearbyStage ? getNearbyRestrooms(nearbyStage) : [], [nearbyStage])
+  const nearbyStage = allPlaces.find(place => place.id === nearbyStageId && place.category === 'stage')
+  const nearbyRestrooms = useMemo(() => nearbyStage ? getNearbyRestrooms(nearbyStage, 500, allPlaces) : [], [nearbyStage, allPlaces])
   const places = useMemo(() => nearbyStage
     ? [nearbyStage, ...nearbyRestrooms.map(({ place }) => place)]
-    : getFilteredPlaces(filter), [filter, nearbyStage, nearbyRestrooms])
-  const selected = places.find(place => place.id === selectedId)
+    : getFilteredPlaces(filter, allPlaces), [filter, nearbyStage, nearbyRestrooms, allPlaces])
+  const selectedBase = places.find(place => place.id === selectedId)
+  const selected = selectedBase ? placeDetails[selectedBase.id] ?? selectedBase : undefined
   const selectedDistance = nearbyRestrooms.find(({ place }) => place.id === selectedId)?.distance
   const currentDistance = selected && location.position ? distanceInMeters([location.position.latitude, location.position.longitude], selected.position) : null
   const { ready, error, retry, zoom, resetCampus, centerNextLocation } = useKakaoFestivalMap(containerRef, places, selected, location.position, setSelectedId)
+
+  useEffect(() => {
+    let active = true
+    void getPlaces().then(serverPlaces => {
+      if (!active) return
+      if (serverPlaces.length) {
+        setAllPlaces(serverPlaces.map(toFestivalPlace))
+        setUsingServerPlaces(true)
+        setPlaceDataMessage('서버에 등록된 최신 장소 정보를 표시하고 있어요.')
+      } else {
+        setPlaceDataMessage('서버에 등록된 장소가 없어 저장된 지도 안내를 표시하고 있어요.')
+      }
+    }).catch(() => {
+      if (active) setPlaceDataMessage('서버 장소 정보를 불러오지 못해 저장된 지도 안내를 표시하고 있어요.')
+    })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedBase?.serverId || placeDetails[selectedBase.id]) return
+    let active = true
+    void getPlace(selectedBase.serverId).then(detail => {
+      if (active) setPlaceDetails(current => ({ ...current, [selectedBase.id]: withPlaceDetail(selectedBase, detail) }))
+    }).catch(() => {
+      if (active) setPlaceDetails(current => ({ ...current, [selectedBase.id]: { ...selectedBase, description: '상세 정보를 불러오지 못했어요. 잠시 후 다시 선택해 주세요.' } }))
+    })
+    return () => { active = false }
+  }, [selectedBase, placeDetails])
 
   function changeFilter(nextFilter: MapFilter) {
     setSelectedId(null)
@@ -55,7 +90,7 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
   }
 
   function showRestroomOnMap(id: string) {
-    if (!festivalPlaces.some(place => place.id === id)) return
+    if (!allPlaces.some(place => place.id === id)) return
     if (!nearbyRestrooms.some(({ place }) => place.id === id)) setNearbyStageId(null)
     setFilter('restroom')
     setSelectedId(id)
@@ -71,10 +106,10 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
           <button className={`${roundButton} pointer-events-auto`} onClick={onBack} aria-label="메인으로 돌아가기"><ControlIcon name="back" /></button>
           <button className={`${roundButton} pointer-events-auto`} onClick={() => dialogRef.current?.showModal()} aria-label="지도 정보와 출처"><ControlIcon name="info" /></button>
         </div>
-        <nav className="pointer-events-auto mt-3 flex gap-2" aria-label="지도 장소 필터">
+        <nav className="pointer-events-auto mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="지도 장소 필터">
           {mapCategories.map(category => (
             <button key={category.id} aria-pressed={filter === category.id} onClick={() => changeFilter(category.id)}
-              className={`flex min-h-10 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-full px-2 text-[14px] font-semibold whitespace-nowrap shadow-[0_2px_8px_#2437521a] ${filter === category.id ? 'bg-[#1554ff] text-white' : 'bg-white text-[#333]'}`}>
+              className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-full px-3 text-[14px] font-semibold whitespace-nowrap shadow-[0_2px_8px_#2437521a] ${filter === category.id ? 'bg-[#1554ff] text-white' : 'bg-white text-[#333]'}`}>
               {category.icon && <span aria-hidden="true" className="text-sm">{category.icon}</span>}{category.label}
             </button>
           ))}
@@ -107,14 +142,18 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
               <p className="pr-8 text-[11px] font-semibold text-[#1554ff]">{selected.status}</p>
               <h2 className="mt-1 pr-8 text-base font-bold">{selected.name}</h2>
               <p className="mt-2 text-xs leading-relaxed text-[#667085]">{selected.description}</p>
-              {selected.category === 'restroom' ? <>
+              {selected.category === 'restroom' && !selected.serverId ? <>
                 {selectedDistance !== undefined && <p className="mt-2 text-xs font-semibold text-[#1554ff]">{nearbyStage?.name}에서 직선 {formatMapDistance(selectedDistance)}</p>}
                 <button className="mt-3 min-h-11 w-full cursor-pointer rounded-xl bg-[#1554ff] px-3 text-sm font-semibold text-white" onClick={() => setRestroomGuide({ buildingId: selected.id })}>화장실 상세 위치 보기 <span aria-hidden="true">›</span></button>
                 <p className="mt-2 text-[10px] text-[#8b95a5]">핀은 건물 위치예요 · 축제 당일 개방 여부 미확인</p>
               </> : <>
                 {selected.category === 'stage' && <button className="mt-3 min-h-11 w-full cursor-pointer rounded-xl bg-[#1554ff] px-3 text-sm font-semibold text-white" onClick={() => showNearbyRestrooms(selected.id)}>공연장 근처 화장실 보기 <span aria-hidden="true">›</span></button>}
-                <a className="mt-3 inline-block text-[11px] text-[#667085] underline underline-offset-2" href={mapSources[selected.source].url} target="_blank" rel="noopener noreferrer">{mapSources[selected.source].label} ↗</a>
+                {selected.source && <a className="mt-3 inline-block text-[11px] text-[#667085] underline underline-offset-2" href={mapSources[selected.source].url} target="_blank" rel="noopener noreferrer">{mapSources[selected.source].label} ↗</a>}
               </>}
+              {selected.serverId && <div className="mt-3 space-y-2 border-t border-[#edf0f3] pt-3 text-xs text-[#667085]">
+                {(selected.building || selected.floor) && <p><strong className="text-[#344054]">위치</strong> {[selected.building, selected.floor].filter(Boolean).join(' · ')}</p>}
+                {selected.events?.length ? <ul className="space-y-1.5">{selected.events.map(event => <li key={event.id}><strong className="text-[#344054]">{event.name}</strong>{event.timeText && ` · ${event.timeText}`}</li>)}</ul> : <p>현재 등록된 진행 이벤트가 없습니다.</p>}
+              </div>}
               <div className="mt-3 border-t border-[#edf0f3] pt-3">
                 {currentDistance !== null && <div className="mb-3 rounded-xl bg-[#f0f5ff] p-3">
                   <p className="text-[11px] text-[#667085]">현재 위치에서 {selected.name}까지</p>
@@ -144,10 +183,11 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
               <h2 className="text-sm font-bold">배달존 위치를 확인 중이에요</h2>
               <p className="mt-1.5 text-xs leading-relaxed text-[#667085]">작년 배달존의 공식 위치 자료가 확인되지 않았어요. 위치가 확인되면 지도에 표시할 예정이에요.</p>
             </> : <>
-              <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold">{filter === 'all' ? '축제 주변 장소' : filter === 'restroom' ? '화장실 안내 건물' : '공연장'} <span className="ml-1 text-[#1554ff]">{places.length}</span></h2><span className="text-[11px] text-[#8b95a5]">핀을 눌러 확인하세요</span></div>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[#667085]">{filter === 'restroom' ? '층별 위치와 남녀 구분을 확인해 보세요. 공개 자료에서 확인한 일부 시설이며, 당일 개방 여부는 미확인이에요.' : <>2025년 5월 공연장 · 교내 상설 화장실<br />올해 배치와 다를 수 있어요. 배달존은 위치 확인 중이에요.</>}</p>
-              {(filter === 'all' || filter === 'restroom') && <button className="mt-3 flex min-h-10 w-full cursor-pointer items-center justify-between rounded-xl bg-[#f0f5ff] px-3 text-xs font-semibold text-[#1554ff]" onClick={() => setRestroomGuide({ buildingId: null })}>화장실 건물·층별 목록 <span aria-hidden="true">›</span></button>}
+              <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold">{filter === 'all' ? '축제 주변 장소' : mapCategories.find(category => category.id === filter)?.label ?? '장소'} <span className="ml-1 text-[#1554ff]">{places.length}</span></h2><span className="text-[11px] text-[#8b95a5]">핀을 눌러 확인하세요</span></div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[#667085]">{usingServerPlaces ? '서버에 등록된 장소를 카테고리별로 확인할 수 있어요. 핀을 선택하면 상세 설명과 진행 이벤트를 불러옵니다.' : filter === 'restroom' ? '층별 위치와 남녀 구분을 확인해 보세요. 공개 자료에서 확인한 일부 시설이며, 당일 개방 여부는 미확인이에요.' : <>2025년 5월 공연장 · 교내 상설 화장실<br />올해 배치와 다를 수 있어요. 배달존은 위치 확인 중이에요.</>}</p>
+              {(filter === 'all' || filter === 'restroom') && !usingServerPlaces && <button className="mt-3 flex min-h-10 w-full cursor-pointer items-center justify-between rounded-xl bg-[#f0f5ff] px-3 text-xs font-semibold text-[#1554ff]" onClick={() => setRestroomGuide({ buildingId: null })}>화장실 건물·층별 목록 <span aria-hidden="true">›</span></button>}
             </>}
+            <p className="mt-3 border-t border-[#edf0f3] pt-2 text-[10px] leading-relaxed text-[#8b95a5]">{placeDataMessage}</p>
           </section>
         </div>
       </div>
