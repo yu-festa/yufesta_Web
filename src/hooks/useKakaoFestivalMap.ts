@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import { campusCenter, festivalPlaces, mapCategories } from '../data/festivalMap'
+import { campusCenter, mapCategories } from '../data/festivalMap'
 import type { FestivalPlace } from '../data/festivalMap'
 import type { UserPosition } from '../utils/location'
 import { loadKakaoMaps } from '../utils/kakaoMaps'
 import type { KakaoMap, KakaoMaps } from '../utils/kakaoMaps'
 
 function fitPlaces(maps: KakaoMaps, map: KakaoMap, places: FestivalPlace[]) {
+  if (!places.length) {
+    map.setLevel(4)
+    map.setCenter(new maps.LatLng(...campusCenter))
+    return
+  }
   const bounds = new maps.LatLngBounds()
-  for (const place of places.length ? places : festivalPlaces) bounds.extend(new maps.LatLng(...place.position))
+  for (const place of places) bounds.extend(new maps.LatLng(...place.position))
   map.setBounds(bounds, 140, 40, 220, 40)
   if (map.getLevel() < 3) map.setLevel(3)
 }
@@ -60,7 +65,7 @@ export function useKakaoFestivalMap(containerRef: RefObject<HTMLDivElement | nul
       const category = mapCategories.find(item => item.id === place.category)!
       const content = document.createElement('button')
       content.type = 'button'
-      content.className = `festival-marker grid size-11 cursor-pointer place-items-center rounded-full border-2 bg-white shadow-[0_3px_8px_#24375240] ${place.category === 'restroom' ? 'border-[#75a7e7]' : place.category === 'delivery' ? 'border-[#596579]' : 'border-[#ef7276]'}`
+      content.className = `festival-marker grid size-11 cursor-pointer place-items-center rounded-full border-2 bg-white shadow-[0_3px_8px_#24375240] ${place.category === 'restroom' ? 'border-[#75a7e7]' : place.category === 'delivery' || place.category === 'amenity' || place.category === 'info' ? 'border-[#596579]' : 'border-[#ef7276]'}`
       content.title = place.name
       content.setAttribute('aria-label', `${place.name} · ${place.status}`)
       const icon = document.createElement('span')

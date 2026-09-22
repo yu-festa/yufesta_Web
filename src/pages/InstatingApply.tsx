@@ -6,6 +6,7 @@ import InstatingHeader from '../components/InstatingHeader'
 import { AlreadyAppliedError, saveApplication } from '../utils/instating'
 import type { InstatingApplication as Application } from '../utils/instating'
 import { performances } from '../data/timetable'
+import { getMatchTags } from '../api/match'
 
 const heartbeatFrames: Keyframe[] = [{ transform: 'scale(1)', offset: 0 }, { transform: 'scale(1.08)', offset: .15 }, { transform: 'scale(1.02)', offset: .28 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1)', offset: 1 }]
 const heartbeatTiming: KeyframeAnimationOptions = { duration: 1800, iterations: Infinity, easing: 'ease-in-out' }
@@ -23,12 +24,21 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
   const [error, setError] = useState('')
   const [duplicate, setDuplicate] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [interestOptions, setInterestOptions] = useState(interests)
   const heartRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, `${step}-${alreadyApplied}-${duplicate}`)
   const submitting = useRef(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const previousStep = useRef(step)
   const selectedPerformance = performances.find(item => item.id === application.performance)
   const allConsented = consents.every(Boolean)
+
+  useEffect(() => {
+    let active = true
+    void getMatchTags().then(tags => {
+      if (active && tags.length) setInterestOptions(tags.map(tag => tag.label))
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (previousStep.current === step) return
@@ -130,7 +140,7 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
           {step === 2 && <div className={"grid gap-[26px] instating-fields"}>
             <fieldset className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}><legend>관심 태그 <b>*</b></legend>
               <p id="interest-help" className={"text-[#838c9e] text-[11px] leading-[1.6] mt-[-4px] mb-[14px] [&_span]:float-right [&_span]:text-[#1554ff] instating-help instating-help-top"}>최대 3개까지 선택할 수 있어요 <span>{application.tags.length} / 3</span></p>
-              <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interests.map(tag => <label key={tag} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag)} disabled={application.tags.length >= 3 && !application.tags.includes(tag)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag] : application.tags.filter(item => item !== tag))} /><span>{tag}</span></label>)}</div>
+              <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interestOptions.map(tag => <label key={tag} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag)} disabled={application.tags.length >= 3 && !application.tags.includes(tag)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag] : application.tags.filter(item => item !== tag))} /><span>{tag}</span></label>)}</div>
             </fieldset>
             <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_48px_12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
               <label htmlFor="instating-performance">보고 싶은 공연</label>

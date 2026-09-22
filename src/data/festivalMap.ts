@@ -1,13 +1,16 @@
 import { restroomBuildings, restroomDetailLevel, restroomSources } from './restrooms.ts'
 
-export type PlaceCategory = 'stage' | 'restroom' | 'delivery'
+export type PlaceCategory = 'stage' | 'booth' | 'restroom' | 'amenity' | 'info' | 'delivery'
 export type MapFilter = 'all' | PlaceCategory
 export type Coordinates = [latitude: number, longitude: number]
 
 export const mapCategories = [
   { id: 'all', label: '전체', icon: '' },
   { id: 'stage', label: '공연장', icon: '🎤' },
+  { id: 'booth', label: '부스', icon: '🎪' },
   { id: 'restroom', label: '화장실', icon: '🚻' },
+  { id: 'amenity', label: '편의', icon: '🏪' },
+  { id: 'info', label: '안내', icon: 'ℹ️' },
   { id: 'delivery', label: '배달존', icon: '🛵' },
 ] as const
 
@@ -23,7 +26,11 @@ export interface FestivalPlace {
   position: Coordinates
   status: string
   description: string
-  source: keyof typeof mapSources
+  source?: keyof typeof mapSources
+  serverId?: number
+  building?: string | null
+  floor?: string | null
+  events?: { id: number; name: string; timeText: string; sortOrder: number }[]
 }
 
 export const campusCenter: Coordinates = [35.8337, 128.7558]
@@ -53,6 +60,6 @@ export const festivalPlaces: FestivalPlace[] = [
   })),
 ]
 
-export function getFilteredPlaces(filter: MapFilter): FestivalPlace[] {
-  return filter === 'all' ? festivalPlaces : festivalPlaces.filter(place => place.category === filter)
+export function getFilteredPlaces(filter: MapFilter, source: FestivalPlace[] = festivalPlaces): FestivalPlace[] {
+  return filter === 'all' ? source : source.filter(place => place.category === filter)
 }

@@ -11,7 +11,8 @@
     "test:push": "node --test tests/push-test.test.ts",
     "test:countdown": "node --test tests/countdown.test.ts",
     "test:lost": "node --test tests/lost-found.test.ts",
-    "test:map": "node --test tests/location.test.ts tests/restrooms.test.ts"
+    "test:map": "node --test tests/location.test.ts tests/restrooms.test.ts",
+    "test:api": "node --test tests/api-client.test.ts tests/api-adapters.test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

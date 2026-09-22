@@ -1,8 +1,20 @@
+import { useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import HomeLogo from '../components/HomeLogo'
 import type { ProfileUser } from '../utils/profile'
 
-export default function Profile({ user, isPreview, onBack, onHome, onResult, onApply }: { user: ProfileUser; isPreview: boolean; onBack: () => void; onHome: () => void; onResult: (id: string) => void; onApply: () => void }) {
+export default function Profile({ user, isPreview, onBack, onHome, onResult, onApply, onLogout }: { user: ProfileUser; isPreview: boolean; onBack: () => void; onHome: () => void; onResult: (id: string) => void; onApply: () => void; onLogout?: () => Promise<void> }) {
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
+
+  async function signOut() {
+    if (!onLogout || loggingOut) return
+    setLoggingOut(true)
+    setLogoutError('')
+    try { await onLogout() }
+    catch { setLogoutError('로그아웃하지 못했어요. 잠시 후 다시 시도해 주세요.'); setLoggingOut(false) }
+  }
+
   return (
     <AppLayout header={<div className="flex h-22 items-center"><HomeLogo onHome={onHome} /></div>}>
       <div className={"text-[#192135] pb-[12px] [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[3px] [&_summary:focus-visible]:[outline:2px_solid_#1554ff] [&_summary:focus-visible]:outline-offset-[3px] profile-page"}>
@@ -16,7 +28,7 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="17" r="8" fill="currentColor" /><path d="M9 41a15 15 0 0 1 30 0" fill="currentColor" /></svg>
             <span aria-hidden="true">✦</span>
           </div>
-          <div className={"min-w-[0] [&_h2]:text-[24px] [&_h2]:font-bold [&_h2]:tracking-[-.8px] [&_h2]:mt-[2px] [&_h2]:wrap-anywhere [&_h2_>_span]:text-[17px] [&_h2_>_span]:font-medium [&_h2_>_span]:ml-[3px] [&_p]:text-[12px] [&_p]:text-[#73829b] [&_p]:mt-[5px] [&_p]:wrap-anywhere profile-user-info"}><span className={"text-[#75849e] text-[12px] profile-greeting"}>반가워요!</span><h2>{user.name}<span>님</span></h2><p>@{user.instagram}</p></div>
+          <div className={"min-w-[0] [&_h2]:text-[24px] [&_h2]:font-bold [&_h2]:tracking-[-.8px] [&_h2]:mt-[2px] [&_h2]:wrap-anywhere [&_h2_>_span]:text-[17px] [&_h2_>_span]:font-medium [&_h2_>_span]:ml-[3px] [&_p]:text-[12px] [&_p]:text-[#73829b] [&_p]:mt-[5px] [&_p]:wrap-anywhere profile-user-info"}><span className={"text-[#75849e] text-[12px] profile-greeting"}>반가워요!</span><h2>{user.name}<span>님</span></h2>{user.instagram && <p>@{user.instagram}</p>}</div>
         </section>
         {isPreview && <p className={"mt-[10px] text-center text-[#8a93a6] text-[11px] profile-preview"}>미리보기 · 이 브라우저의 신청 내역과 결과 체험이에요</p>}
 
@@ -39,6 +51,8 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
           ? <p className={"mt-[10px] text-center text-[#8a93a6] text-[11px] profile-preview"}>신청 완료 · 인스타팅은 한 번만 신청할 수 있어요.</p>
           : <button type="button" className={"flex items-center justify-center w-full p-[15px] mt-[28px] rounded-[8px] bg-[#edf3ff] text-[#1554ff] text-[13px] font-[650] cursor-pointer profile-apply-button"} onClick={onApply}>인스타팅 신청하기</button>}
         <button type="button" className={"w-full min-h-[48px] mt-[12px] [border:1px_solid_#dfe6f6] rounded-[12px] text-[#66758e] text-[13px] font-semibold cursor-pointer [&:hover]:bg-[#f6f8ff] profile-home"} onClick={onHome}>홈으로 돌아가기</button>
+        {onLogout && <button type="button" className={"w-full min-h-[48px] mt-[10px] text-[#8992a4] text-[12px] cursor-pointer disabled:cursor-wait disabled:opacity-60 profile-logout"} onClick={() => void signOut()} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>}
+        {logoutError && <p className="mt-2 text-center text-xs text-red-700" role="alert">{logoutError}</p>}
       </div>
     </AppLayout>
   )
