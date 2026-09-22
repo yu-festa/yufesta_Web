@@ -1,5 +1,6 @@
 import { readApplications } from './instating.ts'
 import type { MatchResult, SavedApplication } from './instating.ts'
+import type { MatchApplication, MatchTag } from '../api/match.ts'
 
 export type InstatingParticipation = {
   id: string
@@ -37,6 +38,32 @@ const previewUser: ProfileUser = {
 // Preview data must never be used as an authentication credential.
 export function getCurrentProfileUser(): ProfileUser | null {
   return null
+}
+
+const tagLabels: Record<MatchTag, string> = {
+  ALCOHOL: '술', PERFORMANCE: '공연', SPORTS: '운동', GAME: '게임', CAFE: '카페',
+  MOVIE: '영화', MUSIC: '음악', PHOTO: '사진', PET: '반려동물', ETC: '기타',
+}
+
+export function profileFromApplication(application: MatchApplication | null): ProfileUser {
+  if (!application) {
+    return { id: 'authenticated-user', name: 'YU FESTA', instagram: '', participations: [] }
+  }
+  return {
+    id: 'authenticated-user',
+    name: application.nickname,
+    instagram: application.instagramId,
+    participations: [{
+      id: String(application.id),
+      festival: '2026 영남대학교 가을축제',
+      round: `${application.roundSeq}차`,
+      nickname: application.nickname,
+      instagram: application.instagramId,
+      interests: application.tags.map(tag => tagLabels[tag]),
+      // 상대 상세 조회 API가 생기기 전까지 결과 화면은 발표 대기로 유지한다.
+      result: { status: 'pending' },
+    }],
+  }
 }
 
 export function resolveProfileAccess(user: ProfileUser | null, previewEnabled: boolean, applications: SavedApplication[] = readApplications()): ProfileAccess {
