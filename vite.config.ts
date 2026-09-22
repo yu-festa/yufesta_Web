@@ -10,7 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon-yufesta-v2.png', 'push-sw.js'],
       manifest: {
         id: '/',
         name: 'YU FESTA',
@@ -24,19 +24,19 @@ export default defineConfig({
         background_color: '#FFFFFF',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'pwa-yufesta-v2-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pwa-yufesta-v2-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pwa-yufesta-v2-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
