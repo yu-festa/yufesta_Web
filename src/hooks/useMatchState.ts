@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getMe } from '../api/auth'
+import type { UserRole } from '../api/auth'
+import { isAdminRole } from '../utils/admin'
 import { ApiError } from '../api/client'
 import { getMatchSummary, getMyApplication } from '../api/match'
 import type { MatchSummary } from '../api/match'
@@ -7,8 +9,9 @@ import { profileFromApplication } from '../utils/profile'
 import type { ProfileUser } from '../utils/profile'
 import { isMatchOpen } from '../utils/match'
 
-export function useMatchState(enabled = true) {
+export function useMatchState(enabled = true, authOnly = false) {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'anonymous' | 'unavailable'>('loading')
+  const [role, setRole] = useState<UserRole | null>(null)
   const [summary, setSummary] = useState<MatchSummary | null>(null)
   const [profile, setProfile] = useState<ProfileUser | null>(null)
   const [error, setError] = useState('')
@@ -22,6 +25,7 @@ export function useMatchState(enabled = true) {
     // 로그아웃 전에 시작한 조회가 뒤늦게 로그인 상태를 복원하지 않도록 무효화합니다.
     requestId.current++
     setAuthStatus('anonymous')
+    setRole(null)
     setProfile(null)
     setSummary(current => current ? { ...current, my: null } : null)
     setError('')
@@ -31,12 +35,20 @@ export function useMatchState(enabled = true) {
   const refresh = useCallback(async () => {
     const id = ++requestId.current
     setRefreshing(true)
-    const [auth, snapshot] = await Promise.allSettled([
-      getMe(), getMatchSummary().then(data => ({ data, receivedAt: Date.now() })),
-    ])
+    const [auth] = await Promise.allSettled([getMe()])
     if (id !== requestId.current) return
     const authenticated = auth.status === 'fulfilled'
+    setRole(authenticated ? auth.value.role : null)
     setAuthStatus(authenticated ? 'authenticated' : auth.reason instanceof ApiError && auth.reason.status === 401 ? 'anonymous' : 'unavailable')
+    if (authOnly || (authenticated && isAdminRole(auth.value.role))) {
+      setProfile(null)
+      setSummary(null)
+      setError(!authenticated && !(auth.reason instanceof ApiError && auth.reason.status === 401) ? '로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.' : '')
+      setRefreshing(false)
+      return
+    }
+    const [snapshot] = await Promise.allSettled([getMatchSummary().then(data => ({ data, receivedAt: Date.now() }))])
+    if (id !== requestId.current) return
     let message = ''
     if (snapshot.status === 'fulfilled') {
       setSummary(snapshot.value.data)
@@ -58,6 +70,7 @@ export function useMatchState(enabled = true) {
         if (id !== requestId.current) return
         if (reason instanceof ApiError && reason.status === 401) {
           setAuthStatus('anonymous')
+          setRole(null)
           setProfile(null)
         }
         message = reason instanceof Error ? reason.message : '신청 내역을 불러오지 못했어요.'
@@ -69,7 +82,7 @@ export function useMatchState(enabled = true) {
     if (id !== requestId.current) return
     setError(message)
     setRefreshing(false)
-  }, [])
+  }, [authOnly])
 
   useEffect(() => {
     if (!enabled) return
@@ -92,7 +105,7 @@ export function useMatchState(enabled = true) {
   }, [enabled, refresh, cancelRefresh])
 
   return {
-    authStatus, summary, profile, error, refreshing, refresh, clearSession, receivedAt,
+    authStatus, role, summary, profile, error, refreshing, refresh, clearSession, receivedAt,
     canApply: !error && !refreshing && isMatchOpen(summary, receivedAt, now),
     alreadyApplied: Boolean(summary?.my?.applied || profile?.participations.some(item => item.roundSeq === summary?.currentRound.seq)),
   }
