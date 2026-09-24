@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
 import HomeLogo from '../components/HomeLogo'
-import { initialCheers } from '../data/cheers'
+import { getCheers } from '../api/cheers'
+import { getNotices } from '../api/notices'
+import { usePublicResource } from '../hooks/usePublicResource'
+import ResourceStatus from '../components/ResourceStatus'
 import { performanceDetails } from '../data/performanceDetails'
 import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
 import find from '../assets/Main/Find.svg'
 import type { MatchSummary } from '../api/match'
 
-const tickerFrames: Keyframe[] = [{ transform: 'translateX(0)' }, { transform: 'translateX(-50%)' }]
-const tickerTiming: KeyframeAnimationOptions = { duration: 55000, iterations: Infinity, easing: 'linear' }
+const tickerFrames: Keyframe[] = [{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }]
 
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff]'
 const sectionLinkClass = 'flex min-h-9 w-full items-center justify-between gap-3 text-left text-[21px] leading-snug font-bold tracking-[-0.65px] [&>svg]:size-5 [&>svg]:shrink-0'
@@ -32,41 +34,34 @@ function Icon({ name, className = '' }: { name: keyof typeof iconPaths; classNam
   return <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name]}</svg>
 }
 
-const cheers = [...new Set(['000 화이팅~~', '핫도그 맛있어용..', '르세라핌 왔다 !!', ...initialCheers.map(cheer => cheer.message)])].slice(0, 9)
-const panels = {
-  notifications: { title: '알림', description: '새로운 알림이 없어요.' },
-}
-type Panel = keyof typeof panels
 
-export default function Main({ onHome, onOpenTimetable, onOpenPerformance, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false, canApply = false, matchSummary, receivedAt }: { onHome: () => void; onOpenTimetable: () => void; onOpenPerformance: (id: string) => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean; canApply?: boolean; matchSummary?: MatchSummary | null; receivedAt?: number }) {
-  const [activePanel, setActivePanel] = useState<Panel | null>(null)
+export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimetable, onOpenPerformance, onOpenCheers, onOpenMap, onOpenLost, onApplyInstating, onOpenProfile, alreadyApplied = false, canApply = false, matchSummary, receivedAt }: { onHome: () => void; onOpenNotices: () => void; onOpenNotice: (id: number) => void; onOpenTimetable: () => void; onOpenPerformance: (id: string) => void; onOpenCheers: () => void; onOpenMap: () => void; onOpenLost: () => void; onApplyInstating: () => void; onOpenProfile: () => void; alreadyApplied?: boolean; canApply?: boolean; matchSummary?: MatchSummary | null; receivedAt?: number }) {
+  const cheersResource = usePublicResource(getCheers)
+  const noticesResource = usePublicResource(getNotices)
+  const cheers = cheersResource.data?.slice(0, 9) ?? []
+  const banner = noticesResource.data?.find(notice => notice.banner)
   const [cheersPaused, setCheersPaused] = useState(false)
   const [cheersHovered, setCheersHovered] = useState(false)
   const [cheersFocused, setCheersFocused] = useState(false)
-  const tickerRef = useMotion<HTMLDivElement>(tickerFrames, tickerTiming, undefined, cheersPaused || cheersHovered || cheersFocused)
-  const dialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    if (activePanel) dialogRef.current?.showModal()
-  }, [activePanel])
-
+  const tickerTiming = useMemo<KeyframeAnimationOptions>(() => ({ duration: Math.min(32000, Math.max(8000, cheers.length * 4000)), iterations: Infinity, easing: 'linear' }), [cheers.length])
+  const tickerRef = useMotion<HTMLDivElement>(tickerFrames, tickerTiming, cheers.length, cheersPaused || cheersHovered || cheersFocused)
   return (
     <AppLayout header={
       <div className="flex h-22 items-center justify-between">
         <HomeLogo onHome={onHome} />
         <div className="flex items-center">
           <button type="button" className={iconButtonClass} aria-label="내 프로필" onClick={onOpenProfile}><Icon name="profile" /></button>
-          <button className={iconButtonClass} aria-label="알림 확인" onClick={() => setActivePanel('notifications')}><Icon name="bell" /></button>
+          <button className={iconButtonClass} aria-label="공지 확인" onClick={onOpenNotices}><Icon name="bell" /></button>
         </div>
       </div>
     }>
       <div className="@container pb-5 text-[#111] [&_button]:cursor-pointer [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-[#1554ff]">
         <span role="heading" aria-level={1} className="sr-only font-bold">YU FESTA 메인</span>
 
-        <div className="flex min-h-10 items-center gap-3 rounded-[10px] bg-[#f5f5f5] px-3.5 py-2.5 [&>svg]:size-[19px] [&>svg]:shrink-0 [&>svg]:text-[#63708a]" aria-label="공연 안내 예시">
-          <Icon name="speaker" />
-          <span><span className="font-bold text-[#1353f2]">예사가락</span><span className="font-medium"> 의 공연까지 </span><span className="font-bold text-[#1353f2]">5</span>분<span className="font-medium"> 남았어요!</span></span>
-        </div>
+<button type="button" className="flex min-h-10 w-full items-center gap-3 rounded-[10px] bg-[#f5f5f5] px-3.5 py-3 text-left text-sm" onClick={() => banner ? onOpenNotice(banner.id) : onOpenNotices}>
+          <Icon name="speaker" className="shrink-0 text-[#63708a]" /><span className="font-semibold text-[#1353f2] wrap-anywhere">{banner?.title ?? '축제 공지 확인하기'}</span>
+        </button>
+        <ResourceStatus loading={noticesResource.loading} error={noticesResource.error} retry={noticesResource.refresh} />
 
         <section data-testid="instating-banner" data-theme="blue" className={"relative isolate overflow-hidden mt-[16px] [padding:clamp(18px,_6.4cqw,_28px)] rounded-[18px] bg-[#12112f] text-[#fff] [&_.instating-banner-action:disabled]:text-[#dceaff] [&_.instating-banner-action:disabled]:bg-[#12335e]/60 [&_.instating-banner-action:disabled]:cursor-default [&[data-theme='blue']]:bg-[#071a49] [&[data-theme='blue']_.instating-banner-art]:[filter:hue-rotate(-48deg)_saturate(115%)] [&[data-theme='blue']_.instating-banner-shade]:[background:linear-gradient(100deg,#031b4d99,#064ea83d_55%,#2488ff38)] instating-banner"} aria-labelledby="instating-title">
           <img className={"absolute inset-[0] z-[-1] w-full h-full pointer-events-none object-cover [object-position:65%_center] instating-banner-art"} src={instatingBackground} width="1536" height="1024" alt="" draggable={false} />
@@ -98,16 +93,18 @@ export default function Main({ onHome, onOpenTimetable, onOpenPerformance, onOpe
         <section className="mt-10" aria-labelledby="cheers-title">
           <span className="block font-medium text-[#777] text-[13px]">함께 만드는 축제의 순간</span>
           <span role="heading" aria-level={2} id="cheers-title" className=" font-bold"><button className={sectionLinkClass} onClick={onOpenCheers}><span className="font-bold text-[20px]">축제를 향한 응원</span><Icon name="arrow" /></button></span>
-          <div className={"flex items-center mt-[10px] rounded-[10px] bg-[#f6f6f6] overflow-hidden cheers-ticker"} data-paused={cheersPaused} onMouseEnter={() => setCheersHovered(true)} onMouseLeave={() => setCheersHovered(false)}>
-            <div className={"flex-1 min-w-[0] overflow-hidden py-[11px] [&:focus-visible]:[outline:2px_solid_#1554ff] [&:focus-visible]:outline-offset-[-3px] [@media(prefers-reduced-motion:reduce)]:overflow-x-auto cheers-ticker-window"} onFocus={() => setCheersFocused(true)} onBlur={() => setCheersFocused(false)} tabIndex={0} role="region" aria-label="응원 메시지. 자동으로 왼쪽으로 이동합니다.">
+          <ResourceStatus loading={cheersResource.loading} error={cheersResource.error} retry={cheersResource.refresh} />
+          {!cheersResource.loading && !cheersResource.error && !cheers.length && <p className="mt-3 rounded-xl bg-[#f6f6f6] p-4 text-sm text-[#63708a]">아직 응원이 없어요. 첫 응원을 남겨주세요!</p>}
+          {cheers.length > 0 && <div className={"flex items-center mt-[10px] rounded-[10px] bg-[#f6f6f6] overflow-hidden cheers-ticker"} data-paused={cheersPaused} onMouseEnter={() => setCheersHovered(true)} onMouseLeave={() => setCheersHovered(false)}>
+            <div className={"flex-1 min-w-[0] overflow-hidden py-[11px] pl-3 [&:focus-visible]:[outline:2px_solid_#1554ff] [&:focus-visible]:outline-offset-[-3px] [@media(prefers-reduced-motion:reduce)]:overflow-x-auto cheers-ticker-window"} onFocus={() => setCheersFocused(true)} onBlur={() => setCheersFocused(false)} tabIndex={0} role="region" aria-label="응원 메시지. 자동으로 왼쪽으로 이동합니다.">
               <div ref={tickerRef} className={"flex w-max cheers-ticker-track"}>
-                {[0, 1].map(copy => <ul key={copy} className={"flex flex-none items-center gap-[24px] pr-[24px] [&_li]:flex [&_li]:flex-none [&_li]:items-center [&_li]:gap-[10px] [&_li]:text-[14px] [&_li]:font-medium [&_li]:whitespace-nowrap [&_li]:leading-[22px] [&_li_>_span]:text-[#1554ff] [&_li_>_span]:text-[18px] [&_li_>_span]:font-bold [@media(prefers-reduced-motion:reduce)]:[&[aria-hidden=true]]:hidden cheers-ticker-list"} aria-label={copy === 0 ? '응원 메시지 예시' : undefined} aria-hidden={copy === 1 || undefined}>
-                  {cheers.map(cheer => <li key={cheer}><span aria-hidden="true">✱</span>{cheer}</li>)}
-                </ul>)}
+                <ul className={"flex flex-none items-center gap-[24px] pr-[24px] [&_li]:flex [&_li]:flex-none [&_li]:items-center [&_li]:gap-[10px] [&_li]:text-[14px] [&_li]:font-medium [&_li]:whitespace-nowrap [&_li]:leading-[22px] [&_li_>_span]:text-[#1554ff] [&_li_>_span]:text-[18px] [&_li_>_span]:font-bold cheers-ticker-list"} aria-label="최근 응원 메시지">
+                  {cheers.map(cheer => <li key={cheer.id}><span aria-hidden="true">✱</span>{cheer.content}</li>)}
+                </ul>
               </div>
             </div>
             <button type="button" className={"grid place-items-center w-[40px] min-h-[44px] shrink-0 text-[#7c8799] bg-[#f6f6f6] cursor-pointer text-[12px] [&:focus-visible]:[outline:2px_solid_#1554ff] [&:focus-visible]:outline-offset-[-3px] [@media(prefers-reduced-motion:reduce)]:hidden cheers-ticker-toggle"} onClick={() => setCheersPaused(paused => !paused)} aria-label={cheersPaused ? '응원글 자동 이동 재생' : '응원글 자동 이동 일시정지'} aria-pressed={cheersPaused}><span aria-hidden="true">{cheersPaused ? '▶' : 'Ⅱ'}</span></button>
-          </div>
+          </div>}
         </section>
 
         <nav className="mt-12 grid gap-6" aria-label="축제 이용 안내">
@@ -123,13 +120,7 @@ export default function Main({ onHome, onOpenTimetable, onOpenPerformance, onOpe
           </button>
         </nav>
 
-        <dialog ref={dialogRef} className="fixed inset-0 m-auto max-h-[calc(100dvh-48px)] w-[min(440px,calc(100%-40px))] rounded-[20px] border-0 bg-white p-0 text-[#17233f] shadow-[0_20px_80px_#14234433] backdrop:bg-[#11182766]" aria-labelledby="home-dialog-title" aria-describedby="home-dialog-description" onClose={() => setActivePanel(null)} onClick={event => { if (event.target === event.currentTarget) dialogRef.current?.close() }}>
-          <div className="relative px-6 py-8">
-            <button className={`${iconButtonClass} absolute top-2 right-2`} aria-label="닫기" onClick={() => dialogRef.current?.close()}><Icon name="close" /></button>
-            <span role="heading" aria-level={2} id="home-dialog-title" className="block pr-7 text-2xl font-bold">{activePanel && panels[activePanel].title}</span>
-            <span id="home-dialog-description" className="mt-4 block text-base leading-relaxed font-normal break-keep text-slate-500">{activePanel && panels[activePanel].description}</span>
-          </div>
-        </dialog>
+
       </div>
     </AppLayout>
   )

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { cancelMyApplication, createMatchApplication, getMyApplication, getMyMatchResults, rejoinMatch, reportMatch } from '../src/api/match.ts'
+import { cancelMyApplication, createMatchApplication, getMyApplication, getMyMatchResults, rejoinMatch, reportMatch, updateMyApplication } from '../src/api/match.ts'
 import type { MatchSummary, MatchTagOption } from '../src/api/match.ts'
 import { ApiError } from '../src/api/client.ts'
-import { isMatchOpen, parseMatchTime, toMatchApplicationRequest } from '../src/utils/match.ts'
+import { applicationToForm, isMatchOpen, parseMatchTime, toMatchApplicationUpdate, toMatchApplicationRequest } from '../src/utils/match.ts'
 import { toMatchResult } from '../src/utils/matchResult.ts'
 import { profileFromApplication } from '../src/utils/profile.ts'
 
@@ -26,7 +26,7 @@ test('신청 정보를 정규화하고 태그 코드·세 가지 동의만 명�
   })
   assert.equal(toMatchApplicationRequest({ ...form, age: '19 - 21세' }, options, [true, true, true]).ageBand, '19-21')
   assert.throws(() => toMatchApplicationRequest(form, options, [true, false, true]), /동의/)
-  for (const tags of [[], ['음악'], ['MUSIC', 'MUSIC'], ['MUSIC', 'CAFE', 'MUSIC', 'CAFE']]) assert.throws(() => toMatchApplicationRequest({ ...form, tags }, options, [true, true, true]), /태그/)
+  for (const tags of [['음악'], ['MUSIC', 'MUSIC'], ['MUSIC', 'CAFE', 'MUSIC', 'CAFE']]) assert.throws(() => toMatchApplicationRequest({ ...form, tags }, options, [true, true, true]), /태그/)
 })
 
 test('신청 가능 시간은 기기 시계 오차 대신 수신한 서버 시각과 경과 시간으로 판단한다', () => {
@@ -83,12 +83,53 @@ test('결과의 회차 선택과 신고 본문을 전달하고 발표 전 409와
   await reportMatch({ matchId: 77, reason: 'FAKE', detail: '프로필 정보가 달라요' })
 })
 
-test('임시 결과 계약은 카드 순서를 보존하고 빈 카드와 미매칭을 구분한다', () => {
-  const result = toMatchResult({ roundSeq: 1, status: 'MATCHED', cards: [{ matchId: 77, nickname: '친구', instagramId: '@friend' }, { matchId: 78, nickname: '친구2', instagramId: 'friend2' }] })
-  assert.deepEqual(result.result, { status: 'matched', partners: [{ matchId: 77, nickname: '친구', instagram: 'friend' }, { matchId: 78, nickname: '친구2', instagram: 'friend2' }] })
-  assert.deepEqual(toMatchResult({ roundSeq: 1, status: 'MATCHED', cards: [] }).result, { status: 'matched', partners: [] })
-  assert.deepEqual(toMatchResult({ roundSeq: 1, status: 'UNMATCHED' }).result, { status: 'unmatched' })
-  for (const data of [null, {}, { roundSeq: 1, status: 'MATCHED' }, { roundSeq: 1, status: 'MATCHED', cards: [{ matchId: 1, nickname: '친구', instagramId: 'javascript:alert(1)' }] }]) assert.throws(() => toMatchResult(data), /형식/)
+const metadata = { roundSeq: 1, nextRoundSeq: 2, hasNextRoundApplication: false, canRejoin: true }
+const partner = { matchId: 77, nickname: '친구', instagramId: '@friend', ageBand: '22-24', intro: '공연 같이 봐요', tags: ['MUSIC', 'CAFE'], commonTags: ['MUSIC'] }
+
+test('실제 partners 응답과 재참여 메타데이터를 보존하고 신고 후 빈 카드와 미매칭을 구분한다', () => {
+  const result = toMatchResult({ ...metadata, status: 'MATCHED', partners: [partner, { ...partner, matchId: 78, instagramId: 'friend2' }] })
+  assert.equal(result.canRejoin, true)
+  assert.equal(result.nextRoundSeq, 2)
+  assert.equal(result.hasNextRoundApplication, false)
+  assert.equal(result.result.status, 'matched')
+  if (result.result.status !== 'matched') throw new Error('matched expected')
+  assert.deepEqual(result.result.partners.map(item => item.matchId), [77, 78])
+  assert.equal(result.result.partners[0].instagram, 'friend')
+  assert.deepEqual(result.result.partners[0].commonTags, ['MUSIC'])
+  assert.equal(result.result.partners[0].intro, '공연 같이 봐요')
+  assert.deepEqual(toMatchResult({ ...metadata, status: 'MATCHED', partners: [] }).result, { status: 'matched', partners: [] })
+  assert.deepEqual(toMatchResult({ ...metadata, status: 'UNMATCHED', partners: [], canRejoin: false }).result, { status: 'unmatched' })
+  assert.equal(toMatchResult({ ...metadata, status: 'UNMATCHED', partners: [], nextRoundSeq: null, canRejoin: false }).nextRoundSeq, null)
+  for (const value of [null, {}, { ...metadata, status: 'MATCHED', cards: [partner] }, { ...metadata, status: 'MATCHED', partners: [{ ...partner, instagramId: 'javascript:alert(1)' }] }, { ...metadata, status: 'MATCHED', partners: [partner, partner] }]) assert.throws(() => toMatchResult(value), /형식/)
+})
+
+test('선택 항목을 비워 신청하고 수정할 수 있으며 닉네임·소개 길이를 검사한다', () => {
+  const optional = { ...form, tags: [], age: '', introduction: '' }
+  const update = toMatchApplicationUpdate(optional, options)
+  assert.equal(update.ageBand, null)
+  assert.equal(update.intro, null)
+  assert.deepEqual(update.tags, [])
+  assert.equal('termsVersion' in update, false)
+  assert.equal('ageConfirmed' in update, false)
+  assert.deepEqual(toMatchApplicationRequest(optional, options, [true, true, true]).tags, [])
+  for (const nickname of [' ', '가', '123456789']) assert.throws(() => toMatchApplicationUpdate({ ...form, nickname }, options), /닉네임/)
+  assert.throws(() => toMatchApplicationUpdate({ ...form, introduction: '가'.repeat(41) }, options), /40자/)
+  const application = { ...toMatchApplicationUpdate(form, options), id: 1, roundSeq: 1, entryType: 'CARRIED' as const, createdAt: '2026-09-24T00:00:00Z' }
+  assert.deepEqual(toMatchApplicationUpdate(applicationToForm(application), options), toMatchApplicationUpdate(form, options))
+})
+
+test('신청 PATCH는 동의 필드 없이 전송하고 갱신된 신청을 반환한다', async () => {
+  Object.defineProperty(globalThis, 'document', { value: { cookie: 'XSRF-TOKEN=edit-token' }, configurable: true, writable: true })
+  const body = toMatchApplicationUpdate(form, options)
+  globalThis.fetch = (async (input, init) => {
+    assert.equal(new URL(String(input)).pathname, '/api/v1/match/applications/me')
+    assert.equal(init?.method, 'PATCH')
+    assert.equal(init?.credentials, 'include')
+    assert.equal(new Headers(init?.headers).get('X-XSRF-TOKEN'), 'edit-token')
+    assert.deepEqual(JSON.parse(String(init?.body)), body)
+    return Response.json({ data: { ...body, id: 1, roundSeq: 2, entryType: 'NEW', createdAt: '2026-09-24T00:00:00Z' } })
+  }) as typeof fetch
+  assert.equal((await updateMyApplication(body)).nickname, '펭귄')
 })
 
 test('현재 신청이 없어도 최근 발표 회차를 프로필에서 열 수 있다', () => {

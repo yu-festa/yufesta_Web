@@ -54,7 +54,12 @@ export type MatchApplicationRequest = {
 }
 
 export function createMatchApplication(application: MatchApplicationRequest) {
-  return apiRequest<void>('/api/v1/match/applications', { method: 'POST', body: JSON.stringify(application) })
+  return apiRequest<MatchApplication>('/api/v1/match/applications', { method: 'POST', body: JSON.stringify(application) })
+}
+
+export type MatchApplicationUpdate = Omit<MatchApplicationRequest, 'termsVersion' | 'privacyVersion' | 'ageConfirmed'>
+export function updateMyApplication(application: MatchApplicationUpdate) {
+  return apiRequest<MatchApplication>('/api/v1/match/applications/me', { method: 'PATCH', body: JSON.stringify(application) })
 }
 
 export function cancelMyApplication() {
@@ -62,17 +67,19 @@ export function cancelMyApplication() {
 }
 
 export function rejoinMatch() {
-  return apiRequest<void>('/api/v1/match/applications/rejoin', { method: 'POST' })
+  return apiRequest<MatchApplication>('/api/v1/match/applications/rejoin', { method: 'POST' })
 }
 
-// 성공 응답은 utils/matchResult.ts의 임시 계약 어댑터에서 검증합니다.
+export type MatchPartner = { matchId: number; nickname: string; ageBand: AgeBand | null; tags: MatchTag[]; commonTags: MatchTag[]; intro: string | null; instagramId: string }
+export type MyMatchResult = { roundSeq: number; status: MatchResultStatus; partners: MatchPartner[]; nextRoundSeq: number | null; hasNextRoundApplication: boolean; canRejoin: boolean }
 export function getMyMatchResults(roundSeq?: number) {
   const query = roundSeq === undefined ? '' : `?${new URLSearchParams({ roundSeq: String(roundSeq) })}`
-  return apiRequest<unknown>(`/api/v1/match/results/me${query}`)
+  return apiRequest<MyMatchResult>(`/api/v1/match/results/me${query}`)
 }
 
-export function reportMatch(report: { matchId: number; reason: string; detail: string }) {
-  return apiRequest<void>('/api/v1/match/reports', { method: 'POST', body: JSON.stringify(report) })
+export type ReportReason = 'PROFILE' | 'FAKE' | 'OTHER'
+export function reportMatch(report: { matchId: number; reason: ReportReason; detail?: string }) {
+  return apiRequest<{ id: number; matchId: number; reason: ReportReason; createdAt: string }>('/api/v1/match/reports', { method: 'POST', body: JSON.stringify(report) })
 }
 
 export function getMatchSummary() {

@@ -1,16 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import HomeLogo from '../components/HomeLogo'
-import { initialCheers } from '../data/cheers'
+import { getCheers, createCheer } from '../api/cheers'
+import { usePublicResource } from '../hooks/usePublicResource'
+import ResourceStatus from '../components/ResourceStatus'
+import { formatContentTime } from '../utils/publicContent'
 
 const PAGE_SIZE = 10
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]'
 
 export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome: () => void }) {
-  const [cheers, setCheers] = useState(initialCheers)
+  const resource = usePublicResource(getCheers)
+  const cheers = resource.data ?? []
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const lock = useRef(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [message, setMessage] = useState('')
   const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!notice) return
+    const timeout = window.setTimeout(() => setNotice(''), 2000)
+    return () => window.clearTimeout(timeout)
+  }, [notice])
 
   useEffect(() => {
     const target = loadMoreRef.current
@@ -25,14 +39,22 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
     return () => observer.disconnect()
   }, [cheers.length, visibleCount])
 
-  function submitCheer(event: React.FormEvent<HTMLFormElement>) {
+  async function submitCheer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const trimmedMessage = message.trim()
-    if (!trimmedMessage) return
-    setCheers(current => [{ id: Date.now(), author: '나의 응원', message: trimmedMessage }, ...current])
-    setVisibleCount(current => Math.max(current, PAGE_SIZE))
-    setMessage('')
-    window.scrollTo(0, 0)
+    if (lock.current || !message.trim()) return
+    lock.current = true
+    setSaving(true)
+    setError('')
+    setNotice('')
+    try {
+      const created = await createCheer(message)
+      resource.replaceData(current => [created, ...(current ?? []).filter(item => item.id !== created.id)].slice(0, 50))
+      setVisibleCount(current => Math.max(current, PAGE_SIZE))
+      setMessage('')
+      setNotice('응원을 등록했어요.')
+      window.scrollTo(0, 0)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '응원을 등록하지 못했어요.') }
+    finally { lock.current = false; setSaving(false) }
   }
 
   const visibleCheers = cheers.slice(0, visibleCount)
@@ -53,9 +75,11 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
             value={message}
             onChange={event => setMessage(event.target.value)}
             placeholder="따뜻한 응원 한마디를 남겨주세요"
-            maxLength={100}
+            maxLength={40}
+            disabled={saving}
+            aria-describedby="cheer-help"
           />
-          <button className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] bg-[#1554ff] text-white disabled:cursor-default disabled:bg-[#aac0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]" type="submit" disabled={!message.trim()} aria-label="응원 보내기">
+          <button className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] bg-[#1554ff] text-white disabled:cursor-default disabled:bg-[#aac0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]" type="submit" disabled={saving || !message.trim()} aria-label="응원 보내기">
             <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3.7 11.1 15.7-7.2c.7-.3 1.4.4 1.1 1.1l-7.2 15.7c-.3.7-1.3.6-1.5-.1l-1.4-5-4.9-1.4c-.8-.2-.9-1.2-.2-1.6l8.3-4.2-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </form>
@@ -72,31 +96,34 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
         <div className="mt-5">
           <p className="flex items-center gap-2 text-[13px] font-medium text-[#b5b5b5]"><span className="text-base font-bold text-[#1554ff]" aria-hidden="true">✱</span>함께 만드는 응원의 순간</p>
           <h2 className="mt-2 text-[24px] leading-tight font-bold tracking-[-0.8px]">우리의 응원이 모이는 곳</h2>
-          <p className="mt-2 text-[13px] font-medium text-[#b0b0b0]">축제의 설렘과 응원을 자유롭게 남겨주세요.</p>
+          <p className="mt-2 text-[13px] font-medium text-[#b0b0b0]">40자 이내의 응원을 남겨주세요.</p>
         </div>
 
         <div className="mt-9 flex items-baseline gap-2">
-          <h2 className="text-[16px] font-bold">전체 응원</h2>
-          <strong className="text-[16px] font-bold text-[#1554ff]">{cheers.length}</strong>
+          <h2 className="text-[16px] font-bold">최근 응원</h2>
+          <strong className="text-[16px] font-bold text-[#1554ff]">{resource.data ? cheers.length : '—'}</strong>
         </div>
 
-        <ul className="mt-3" aria-label="전체 응원 목록">
+        <p id="cheer-help" className="mt-2 text-xs text-[#7d89a1]">작성 중 {message.length}/40자</p>
+        <ResourceStatus loading={resource.loading} error={resource.error} retry={resource.refresh} />
+        {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+        {notice && <p role="status" className="mt-3 text-sm text-[#1554ff]">{notice}</p>}
+        {!resource.loading && !resource.error && cheers.length === 0 && <p className="mt-8 rounded-2xl bg-[#f7f9ff] p-8 text-center text-sm">첫 응원을 남겨주세요!</p>}
+        <ul className="mt-3" aria-label="최근 응원 목록">
           {visibleCheers.map(cheer => (
-            <li className="grid min-h-18 grid-cols-[40px_minmax(0,1fr)_36px] items-center gap-2 border-b border-[#e6e6e6] py-2" key={cheer.id}>
-              <span className="grid size-9 place-items-center rounded-full bg-[#dfe8ff] text-[14px] font-semibold text-[#89a5e9]" aria-hidden="true">푸</span>
+            <li className="grid min-h-18 grid-cols-[40px_minmax(0,1fr)] items-center gap-2 border-b border-[#e6e6e6] py-2" key={cheer.id}>
+              <span className="grid size-9 place-items-center rounded-full bg-[#dfe8ff] text-[14px] font-semibold text-[#89a5e9]" aria-hidden="true">{cheer.displayName.slice(0, 1)}</span>
               <div className="min-w-0">
-                <strong className="block truncate text-[14px] font-bold tracking-[-0.25px]">{cheer.author}</strong>
-                <p className="mt-1 truncate text-[11px] font-medium tracking-[-0.15px] text-[#333]">{cheer.message}</p>
+                <strong className="block truncate text-[14px] font-bold tracking-[-0.25px]">{cheer.displayName}</strong>
+                <p className="mt-1 whitespace-pre-wrap wrap-anywhere text-[13px] font-medium tracking-[-0.15px] text-[#333]">{cheer.content}</p>
+                <time className="mt-2 block text-xs text-[#8a93a6]" dateTime={cheer.createdAt}>{formatContentTime(cheer.createdAt)}</time>
               </div>
-              <button className={`${iconButtonClass} size-9`} aria-label={`${cheer.author} 응원 메뉴`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" /></svg>
-              </button>
             </li>
           ))}
         </ul>
 
         <div ref={loadMoreRef} className="grid min-h-12 place-items-center text-xs text-[#999]" aria-live="polite">
-          {visibleCount < cheers.length ? '아래로 스크롤하면 응원을 더 불러와요' : '모든 응원을 확인했어요'}
+          {cheers.length > 0 && (visibleCount < cheers.length ? '아래로 스크롤하면 응원을 더 볼 수 있어요' : '최근 응원을 모두 확인했어요')}
         </div>
       </section>
     </AppLayout>

@@ -4,7 +4,7 @@ import type { UserRole } from '../api/auth'
 import { isAdminRole } from '../utils/admin'
 import { ApiError } from '../api/client'
 import { getMatchSummary, getMyApplication } from '../api/match'
-import type { MatchSummary } from '../api/match'
+import type { MatchSummary, MatchApplication } from '../api/match'
 import { profileFromApplication } from '../utils/profile'
 import type { ProfileUser } from '../utils/profile'
 import { isMatchOpen } from '../utils/match'
@@ -13,6 +13,7 @@ export function useMatchState(enabled = true, authOnly = false) {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'anonymous' | 'unavailable'>('loading')
   const [role, setRole] = useState<UserRole | null>(null)
   const [summary, setSummary] = useState<MatchSummary | null>(null)
+  const [application, setApplication] = useState<MatchApplication | null>(null)
   const [profile, setProfile] = useState<ProfileUser | null>(null)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
@@ -27,6 +28,7 @@ export function useMatchState(enabled = true, authOnly = false) {
     setAuthStatus('anonymous')
     setRole(null)
     setProfile(null)
+    setApplication(null)
     setSummary(current => current ? { ...current, my: null } : null)
     setError('')
     setRefreshing(false)
@@ -42,6 +44,7 @@ export function useMatchState(enabled = true, authOnly = false) {
     setAuthStatus(authenticated ? 'authenticated' : auth.reason instanceof ApiError && auth.reason.status === 401 ? 'anonymous' : 'unavailable')
     if (authOnly || (authenticated && isAdminRole(auth.value.role))) {
       setProfile(null)
+      setApplication(null)
       setSummary(null)
       setError(!authenticated && !(auth.reason instanceof ApiError && auth.reason.status === 401) ? '로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.' : '')
       setRefreshing(false)
@@ -65,6 +68,7 @@ export function useMatchState(enabled = true, authOnly = false) {
           throw reason
         })
         if (id !== requestId.current) return
+        setApplication(application)
         setProfile(profileFromApplication(application, snapshot.status === 'fulfilled' ? snapshot.value.data : null))
       } catch (reason) {
         if (id !== requestId.current) return
@@ -72,11 +76,13 @@ export function useMatchState(enabled = true, authOnly = false) {
           setAuthStatus('anonymous')
           setRole(null)
           setProfile(null)
+          setApplication(null)
         }
         message = reason instanceof Error ? reason.message : '신청 내역을 불러오지 못했어요.'
       }
     } else {
       setProfile(null)
+      setApplication(null)
       if (!(auth.reason instanceof ApiError && auth.reason.status === 401)) message ||= '로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.'
     }
     if (id !== requestId.current) return
@@ -105,7 +111,7 @@ export function useMatchState(enabled = true, authOnly = false) {
   }, [enabled, refresh, cancelRefresh])
 
   return {
-    authStatus, role, summary, profile, error, refreshing, refresh, clearSession, receivedAt,
+    authStatus, role, summary, profile, application, error, refreshing, refresh, clearSession, receivedAt,
     canApply: !error && !refreshing && isMatchOpen(summary, receivedAt, now),
     alreadyApplied: Boolean(summary?.my?.applied || profile?.participations.some(item => item.roundSeq === summary?.currentRound.seq)),
   }
