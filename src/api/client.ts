@@ -1,7 +1,8 @@
 export type ValidationError = {
   field: string
   value?: unknown
-  reason: string
+  reason?: string
+  message?: string
 }
 
 export type ApiResponse<T> = {
@@ -21,7 +22,7 @@ type ViteEnv = { DEV?: boolean; VITE_API_BASE_URL?: string }
 const env = (import.meta as ImportMeta & { env?: ViteEnv }).env
 const configuredBaseUrl = env?.VITE_API_BASE_URL?.trim()
 
-export const API_BASE_URL = (configuredBaseUrl || (env?.DEV ? 'http://localhost:8080' : '')).replace(/\/$/, '')
+export const API_BASE_URL = (configuredBaseUrl || 'https://api.yufesta.com').replace(/\/$/, '')
 
 export class ApiError extends Error {
   readonly status: number
@@ -111,6 +112,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   if (!response.ok) throw await parseError(response)
   if (response.status === 204) return undefined as T
 
-  const body = await response.json() as ApiResponse<T>
+  const text = await response.text()
+  if (!text.trim()) return undefined as T
+  const body = JSON.parse(text) as ApiResponse<T>
   return body.data
 }

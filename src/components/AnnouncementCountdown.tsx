@@ -8,16 +8,17 @@ const announcementLabel = new Intl.DateTimeFormat('ko-KR', {
 
 function kstTimestamp(value?: string) {
   if (!value) return null
-  return Date.parse(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}+09:00`)
+  const timestamp = Date.parse(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}+09:00`)
+  return Number.isFinite(timestamp) ? timestamp : null
 }
 
-export default function AnnouncementCountdown({ publishAt, serverNow, roundSeq = 1 }: { publishAt?: string; serverNow?: string; roundSeq?: number }) {
+export default function AnnouncementCountdown({ publishAt, serverNow, roundSeq = 1, receivedAt: summaryReceivedAt }: { publishAt?: string; serverNow?: string; roundSeq?: number; receivedAt?: number }) {
   const target = useMemo(() => kstTimestamp(publishAt) ?? ANNOUNCEMENT_TIMESTAMP, [publishAt])
   const [receivedAt] = useState(Date.now)
   const serverOffset = useMemo(() => {
     const timestamp = kstTimestamp(serverNow)
-    return timestamp === null || Number.isNaN(timestamp) ? 0 : timestamp - receivedAt
-  }, [serverNow, receivedAt])
+    return timestamp === null || Number.isNaN(timestamp) ? 0 : timestamp - (summaryReceivedAt ?? receivedAt)
+  }, [serverNow, receivedAt, summaryReceivedAt])
   const [remaining, setRemaining] = useState(() => getCountdown(Date.now() + serverOffset, target))
 
   useEffect(() => {
@@ -37,8 +38,7 @@ export default function AnnouncementCountdown({ publishAt, serverNow, roundSeq =
   }, [serverOffset, target])
 
   const units = [
-    { label: '일', value: remaining.days },
-    { label: '시간', displayLabel: '시', value: remaining.hours },
+    { label: '시간', displayLabel: '시', value: remaining.days * 24 + remaining.hours },
     { label: '분', value: remaining.minutes },
     { label: '초', value: remaining.seconds },
   ]

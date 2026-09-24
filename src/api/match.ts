@@ -41,6 +41,40 @@ export type MatchApplication = {
   createdAt: string
 }
 
+export type MatchApplicationRequest = {
+  instagramId: string
+  nickname: string
+  gender: Gender
+  ageBand: AgeBand | null
+  tags: MatchTag[]
+  intro: string | null
+  termsVersion: string
+  privacyVersion: string
+  ageConfirmed: boolean
+}
+
+export function createMatchApplication(application: MatchApplicationRequest) {
+  return apiRequest<void>('/api/v1/match/applications', { method: 'POST', body: JSON.stringify(application) })
+}
+
+export function cancelMyApplication() {
+  return apiRequest<void>('/api/v1/match/applications/me', { method: 'DELETE' })
+}
+
+export function rejoinMatch() {
+  return apiRequest<void>('/api/v1/match/applications/rejoin', { method: 'POST' })
+}
+
+// 성공 응답은 utils/matchResult.ts의 임시 계약 어댑터에서 검증합니다.
+export function getMyMatchResults(roundSeq?: number) {
+  const query = roundSeq === undefined ? '' : `?${new URLSearchParams({ roundSeq: String(roundSeq) })}`
+  return apiRequest<unknown>(`/api/v1/match/results/me${query}`)
+}
+
+export function reportMatch(report: { matchId: number; reason: string; detail: string }) {
+  return apiRequest<void>('/api/v1/match/reports', { method: 'POST', body: JSON.stringify(report) })
+}
+
 export function getMatchSummary() {
   return apiRequest<MatchSummary>('/api/v1/match/summary')
 }

@@ -10,20 +10,15 @@ import Login from './pages/Login'
 import InstatingApply from './pages/InstatingApply'
 import Profile from './pages/Profile'
 import InstatingResult from './pages/InstatingResult'
-import { APPLICATION_STORAGE_KEY, readApplications } from './utils/instating'
-import { profileFromApplication, resolveProfileAccess } from './utils/profile'
-import type { ProfileUser } from './utils/profile'
+import { resolveProfileAccess } from './utils/profile'
 import Landing from './pages/Landing'
 import { useFestivalOpening } from './hooks/useFestivalOpening'
 import { resolveFestivalStart } from './utils/festivalLaunch'
-import { getMe, logout } from './api/auth'
-import { ApiError } from './api/client'
-import { getMatchSummary, getMyApplication } from './api/match'
-import type { MatchSummary } from './api/match'
+import { getMe, LOGIN_SUCCESS_PATH, logout } from './api/auth'
+import { useMatchState } from './hooks/useMatchState'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
-const allowRepeatApplication = import.meta.env.DEV && import.meta.env.VITE_INSTATING_REPEAT_TEST === 'true'
 const previewEnabled = import.meta.env.VITE_PROFILE_PREVIEW === 'true'
 const SPLASH_SEEN_KEY = 'yufesta:splash-seen'
 
@@ -33,7 +28,6 @@ function shouldShowSplash() {
 }
 
 type Page = 'entry' | 'main' | 'timetable' | 'performance' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'lost-detail' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
-type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unavailable'
 
 function getPageFromHash(): Page {
   if (window.location.hash.startsWith('#lost/post/')) return 'lost-detail'
@@ -67,19 +61,32 @@ const App = () => {
   const mainScrollRef = useRef(0)
   const lostScrollRef = useRef(0)
   const [lostPostId, setLostPostId] = useState(getLostPostId)
-  const [, refreshApplications] = useState(0)
-  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
-  const [loginRedirect, setLoginRedirect] = useState('/main#profile')
-  const [serverProfile, setServerProfile] = useState<ProfileUser | null>(null)
-  const [matchSummary, setMatchSummary] = useState<MatchSummary | null>(null)
   const festivalOpened = useFestivalOpening(festivalStart)
+  const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'profile', 'instating-result', 'instating-apply', 'login'].includes(requestedPage)
+  const { authStatus, summary: matchSummary, profile: serverProfile, alreadyApplied, canApply, error: matchError, refreshing, refresh, receivedAt } = useMatchState(needsMatchState)
   const profileAccess = resolveProfileAccess(serverProfile, previewEnabled)
-  const alreadyApplied = Boolean(matchSummary?.my?.applied) || readApplications().length > 0 || (profileAccess.user?.participations.some(item => !item.isDemo) ?? false)
   const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
   const [performanceId, setPerformanceId] = useState(() => window.location.hash.startsWith('#performance/') ? window.location.hash.slice('#performance/'.length) : '')
   const requiresAuthentication = requestedPage === 'profile' || requestedPage === 'instating-result' || requestedPage === 'instating-apply'
-  const page = requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus !== 'loading' && profileAccess.page === 'login' ? 'login' : requestedPage
-  const resolvedLoginRedirect = requestedPage === 'instating-apply' ? '/instating/apply' : loginRedirect
+  const authenticatedLogin = requestedPage === 'login' && authStatus === 'authenticated' && !new URLSearchParams(window.location.search).has('error')
+  const page = authenticatedLogin ? 'main' : requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus === 'anonymous' && profileAccess.page === 'login' ? 'login' : requestedPage
+
+  useEffect(() => {
+    if (requestedPage !== 'entry' || festivalOpened || new URLSearchParams(window.location.search).has('error')) return
+    let active = true
+    // OAuth 서버가 루트로 복귀시켜도 실제 세션이 확인되면 축제 시작일과 무관하게 메인으로 보냅니다.
+    // 비로그인 및 연결 실패는 랜딩 화면을 유지하고 반복 조회나 오류 배너를 띄우지 않습니다.
+    void getMe().then(() => {
+      if (!active) return
+      window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
+      setPage('main')
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [requestedPage, festivalOpened])
+
+  useEffect(() => {
+    if (authenticatedLogin) window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
+  }, [authenticatedLogin])
 
   useEffect(() => {
     if (!showSplash) return
@@ -88,36 +95,7 @@ const App = () => {
   }, [showSplash])
 
   useEffect(() => {
-    let active = true
-    async function loadBackendState() {
-      const summary = await getMatchSummary().catch(() => null)
-      if (!active) return
-      setMatchSummary(summary)
-
-      try {
-        await getMe()
-        if (!active) return
-        setAuthStatus('authenticated')
-        let application = null
-        if (summary?.my?.applied) {
-          try { application = await getMyApplication() }
-          catch (error) {
-            if (!(error instanceof ApiError && error.code === 'APPLICATION_NOT_FOUND')) throw error
-          }
-        }
-        if (active) setServerProfile(profileFromApplication(application))
-      } catch (error) {
-        if (!active) return
-        setServerProfile(null)
-        setAuthStatus(error instanceof ApiError && error.status === 401 ? 'anonymous' : 'unavailable')
-      }
-    }
-    void loadBackendState()
-    return () => { active = false }
-  }, [])
-
-  useEffect(() => {
-    if (authStatus !== 'loading' && requiresAuthentication && profileAccess.page === 'login') {
+    if (authStatus === 'anonymous' && requiresAuthentication && profileAccess.page === 'login') {
       window.history.replaceState(window.history.state, '', '/#login')
     }
   }, [requestedPage, requiresAuthentication, profileAccess.page, authStatus])
@@ -135,12 +113,6 @@ const App = () => {
       window.removeEventListener('popstate', syncPage)
       window.removeEventListener('hashchange', syncPage)
     }
-  }, [])
-
-  useEffect(() => {
-    const sync = (event: StorageEvent) => { if (event.key === APPLICATION_STORAGE_KEY || event.key === null) refreshApplications(value => value + 1) }
-    window.addEventListener('storage', sync)
-    return () => window.removeEventListener('storage', sync)
   }, [])
 
   useLayoutEffect(() => {
@@ -162,8 +134,7 @@ const App = () => {
     }
   }
 
-  function openLogin(redirect = '/main#profile') {
-    setLoginRedirect(redirect)
+  function openLogin() {
     openPage('login')
   }
 
@@ -197,9 +168,7 @@ const App = () => {
 
   async function signOut() {
     await logout()
-    setAuthStatus('anonymous')
-    setServerProfile(null)
-    setMatchSummary(await getMatchSummary().catch(() => null))
+    await refresh()
     goHome()
   }
 
@@ -228,18 +197,20 @@ const App = () => {
   return (
     <>
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
+        {needsMatchState && matchError && <div className="mx-auto max-w-[480px] bg-red-50 px-5 py-3 text-sm text-red-800" role="alert">{matchError}<button type="button" className="ml-3 underline disabled:opacity-50" disabled={refreshing} onClick={() => void refresh()}>다시 불러오기</button></div>}
         {page === 'landing' && <Landing target={festivalStart} />}
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
         {page === 'performance' && <PerformanceDetail performance={performanceDetails.find(item => encodeURIComponent(item.id) === performanceId)} onBack={closePage} onHome={goHome} />}
         {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
         {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
         {(page === 'lost' || page === 'lost-write' || page === 'lost-detail') && <LostFound isWriting={page === 'lost-write'} postId={page === 'lost-detail' ? lostPostId : null} onOpenPost={openLostPost} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
-        {page === 'login' && <Login onBack={closePage} onHome={goHome} redirectPath={resolvedLoginRedirect} />}
+        {requiresAuthentication && authStatus === 'unavailable' && !profileAccess.isPreview && <p className="mx-auto max-w-[480px] px-5 py-20 text-center text-sm text-[#63708a]">서버 연결을 확인한 후 다시 불러와 주세요.</p>}
+        {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
         {(page === 'profile' || page === 'instating-result' || page === 'instating-apply') && authStatus === 'loading' && <div className="grid min-h-dvh place-items-center text-sm text-[#63708a]" role="status">로그인 상태를 확인하고 있어요…</div>}
-        {page === 'profile' && authStatus !== 'loading' && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} onResult={openResult} onApply={() => openPage('instating-apply')} onLogout={authStatus === 'authenticated' ? signOut : undefined} /> : <Login onBack={closePage} onHome={goHome} redirectPath="/main#profile" />)}
-        {page === 'instating-result' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={profileAccess.user.participations.find(item => encodeURIComponent(item.id) === resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} />}
-        {page === 'instating-apply' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} allowRepeat={allowRepeatApplication} />}
-        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenPerformance={openPerformance} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied && !allowRepeatApplication} matchSummary={matchSummary} onApplyInstating={() => authStatus !== 'authenticated' ? openLogin('/instating/apply') : allowRepeatApplication ? openPage('instating-apply') : alreadyApplied ? openProfile() : openPage('instating-apply')} onOpenProfile={() => authStatus === 'loading' ? openPage('profile') : profileAccess.page === 'login' ? openLogin() : openPage('profile')} />}
+        {page === 'profile' && (authStatus === 'authenticated' || profileAccess.isPreview) && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} onResult={openResult} onApply={() => openPage('instating-apply')} onLogout={authStatus === 'authenticated' ? signOut : undefined} matchSummary={matchSummary} alreadyApplied={alreadyApplied} canApply={canApply} onChanged={refresh} /> : <Login onBack={closePage} onHome={goHome} />)}
+        {page === 'instating-result' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={profileAccess.user.participations.find(item => encodeURIComponent(item.id) === resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} onChanged={refresh} />}
+        {page === 'instating-apply' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} canApply={canApply} onSubmitted={refresh} publishAt={matchSummary?.currentRound.publishAt} />}
+        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenPerformance={openPerformance} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} canApply={canApply} matchSummary={matchSummary} receivedAt={receivedAt} onApplyInstating={() => authStatus !== 'authenticated' ? openLogin() : alreadyApplied ? openProfile() : openPage('instating-apply')} onOpenProfile={() => authStatus === 'loading' ? openPage('profile') : profileAccess.page === 'login' ? openLogin() : openPage('profile')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

@@ -3,42 +3,42 @@ import type { FormEvent } from 'react'
 import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import InstatingHeader from '../components/InstatingHeader'
-import { AlreadyAppliedError, saveApplication } from '../utils/instating'
+import { ApiError } from '../api/client'
+import { toMatchApplicationRequest, parseMatchTime } from '../utils/match'
 import type { InstatingApplication as Application } from '../utils/instating'
-import { performances } from '../data/timetable'
-import { getMatchTags } from '../api/match'
+import { createMatchApplication, getMatchTags } from '../api/match'
+import type { MatchTagOption } from '../api/match'
 
 const heartbeatFrames: Keyframe[] = [{ transform: 'scale(1)', offset: 0 }, { transform: 'scale(1.08)', offset: .15 }, { transform: 'scale(1.02)', offset: .28 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1)', offset: 1 }]
 const heartbeatTiming: KeyframeAnimationOptions = { duration: 1800, iterations: Infinity, easing: 'ease-in-out' }
 
-const interests = ['술', '공연', '운동', '게임', '카페', '영화', '음악', '사진', '반려동물', '기타']
-const ages = ['20 - 21세', '22 - 24세', '25 - 27세', '28세 이상']
+const ages = ['19 - 21세', '22 - 24세', '25 - 27세', '28세 이상']
 const consentLabels = ['[필수] 개인정보 수집·이용 동의', '[필수] 서비스 이용약관 동의', '[필수] 만 19세 이상입니다']
 
-export default function InstatingApply({ onHome, onProfile, alreadyApplied = false, allowRepeat = false }: { onHome: () => void; onProfile: () => void; alreadyApplied?: boolean; allowRepeat?: boolean }) {
+export default function InstatingApply({ onHome, onProfile, onSubmitted, alreadyApplied = false, canApply = false, publishAt }: { onHome: () => void; onProfile: () => void; onSubmitted: () => Promise<void>; alreadyApplied?: boolean; canApply?: boolean; publishAt?: string }) {
   const [step, setStep] = useState(1)
   const [application, setApplication] = useState<Application>({
     nickname: '', instagram: '', gender: '', age: '', tags: [], performance: '', introduction: '', multipleMatches: false,
   })
   const [consents, setConsents] = useState([false, false, false])
   const [error, setError] = useState('')
-  const [duplicate, setDuplicate] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [interestOptions, setInterestOptions] = useState(interests)
-  const heartRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, `${step}-${alreadyApplied}-${duplicate}`)
+  const [interestOptions, setInterestOptions] = useState<MatchTagOption[]>([])
+  const heartRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, `${step}-${alreadyApplied}`)
   const submitting = useRef(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const previousStep = useRef(step)
-  const selectedPerformance = performances.find(item => item.id === application.performance)
+  const [tagsError, setTagsError] = useState('')
+  const [tagReload, setTagReload] = useState(0)
   const allConsented = consents.every(Boolean)
 
   useEffect(() => {
     let active = true
     void getMatchTags().then(tags => {
-      if (active && tags.length) setInterestOptions(tags.map(tag => tag.label))
-    }).catch(() => undefined)
+      if (active) { setInterestOptions(tags); setTagsError(tags.length ? '' : '관심 태그가 아직 등록되지 않았어요.') }
+    }).catch(() => { if (active) setTagsError('관심 태그를 불러오지 못했어요.') })
     return () => { active = false }
-  }, [])
+  }, [tagReload])
 
   useEffect(() => {
     if (previousStep.current === step) return
@@ -55,7 +55,8 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
   async function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting.current || step === 4) return
-    if (!allowRepeat && (alreadyApplied || duplicate)) { setDuplicate(true); return }
+    if (alreadyApplied) return
+    if (!canApply) { setError('현재는 신청할 수 없어요. 접수 시간과 연결 상태를 확인해 주세요.'); return }
     if (step === 1 && !application.nickname.trim()) {
       setError('닉네임을 입력해 주세요.')
       return
@@ -72,12 +73,16 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
     if (step === 3) {
       submitting.current = true
       setSaving(true)
-      try { await saveApplication(application, window.localStorage, { allowRepeat }) }
-      catch (reason) {
-        if (reason instanceof AlreadyAppliedError) setDuplicate(true)
-        else setError('브라우저에 저장하지 못했어요. 저장 공간과 브라우저 설정을 확인한 후 다시 시도해주세요.')
+      try {
+        await createMatchApplication(toMatchApplicationRequest(application, interestOptions, consents))
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : '신청하지 못했어요. 다시 시도해 주세요.')
+        if (reason instanceof ApiError && reason.status === 409) void onSubmitted()
         return
       } finally { submitting.current = false; setSaving(false) }
+      setStep(4)
+      void onSubmitted()
+      return
     }
     setStep(current => current + 1)
   }
@@ -88,12 +93,12 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
     else { setError(''); setStep(current => current - 1) }
   }
 
-  if (!allowRepeat && (alreadyApplied || duplicate) && step !== 4) return (
+  if (alreadyApplied && step !== 4) return (
     <AppLayout header={<InstatingHeader onHome={onHome} onProfile={onProfile} />}>
       <section className={"text-[#172039] [padding:20px_0_8px] [&_button:focus-visible]:[outline:2px_solid_#1554ff] [&_button:focus-visible]:outline-offset-[3px] [&_input:focus-visible]:[outline:2px_solid_#1554ff] [&_input:focus-visible]:outline-offset-[3px] [&_select:focus-visible]:[outline:2px_solid_#1554ff] [&_select:focus-visible]:outline-offset-[3px] [&_textarea:focus-visible]:[outline:2px_solid_#1554ff] [&_textarea:focus-visible]:outline-offset-[3px] text-center [&_h2]:text-[25px] [&_h2]:font-[750] [&_h2]:tracking-[-1px] [&_h2]:mt-[12px] [&_>_p]:text-[13px] [&_>_p]:leading-[1.8] [&_>_p]:text-[#8390a5] [&_>_p]:mt-[14px] [@media(prefers-reduced-motion:reduce)]:[&_*]:[transition:none] instating-apply instating-success"}>
         <span ref={heartRef} className={"grid place-items-center w-[96px] h-[96px] rounded-full [margin:0_auto_22px] bg-[#eef4ff] text-[#1554ff] text-[70px] instating-success-mark"} aria-hidden="true">♡</span>
         <h1 className="text-2xl font-bold">이미 신청을 완료했어요</h1>
-        <p>인스타팅은 한 번만 신청할 수 있어요.<br />마이페이지에서 신청 내역과 결과를 확인해주세요.</p>
+        <p>이번 회차의 신청을 완료했어요.<br />마이페이지에서 신청 내역과 결과를 확인해주세요.</p>
         <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} onClick={onProfile}>신청 내역 확인하기</button>
         <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer text-[#758198] mt-[8px] instating-secondary"} onClick={onHome}>홈으로 돌아가기</button>
       </section>
@@ -140,24 +145,12 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
           {step === 2 && <div className={"grid gap-[26px] instating-fields"}>
             <fieldset className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}><legend>관심 태그 <b>*</b></legend>
               <p id="interest-help" className={"text-[#838c9e] text-[11px] leading-[1.6] mt-[-4px] mb-[14px] [&_span]:float-right [&_span]:text-[#1554ff] instating-help instating-help-top"}>최대 3개까지 선택할 수 있어요 <span>{application.tags.length} / 3</span></p>
-              <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interestOptions.map(tag => <label key={tag} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag)} disabled={application.tags.length >= 3 && !application.tags.includes(tag)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag] : application.tags.filter(item => item !== tag))} /><span>{tag}</span></label>)}</div>
+              <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interestOptions.map(tag => <label key={tag.code} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag.code)} disabled={application.tags.length >= 3 && !application.tags.includes(tag.code)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag.code] : application.tags.filter(item => item !== tag.code))} /><span>{tag.label}</span></label>)}</div>
             </fieldset>
-            <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_48px_12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
-              <label htmlFor="instating-performance">보고 싶은 공연</label>
-              <p id="performance-help" className={"text-[#838c9e] text-[11px] leading-[1.6] mt-[-4px] mb-[14px] [&_span]:float-right [&_span]:text-[#1554ff] instating-help instating-help-top"}>축제에서 보고 싶은 공연을 선택해주세요</p>
-              <div className="relative">
-                <select id="instating-performance" className="appearance-none" value={application.performance} onChange={event => update('performance', event.target.value)} aria-describedby="performance-help">
-                  <option value="">선택 안 함</option>
-                  {performances.map(performance => <option key={performance.id} value={performance.id}>{performance.name} · {performance.start}</option>)}
-                </select>
-                <svg className="pointer-events-none absolute top-1/2 right-4 size-5 -translate-y-1/2 text-[#344054]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-              </div>
-            </div>
             <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
               <label htmlFor="instating-introduction">한 줄 소개</label>
               <div className={"w-full [border:1px_solid_#e0e4ec] rounded-[8px] bg-white relative pb-[24px] [&_textarea]:w-full [&_textarea]:block [&_textarea]:p-[14px] [&_textarea]:resize-none [&_textarea]:text-[16px] [&_textarea]:min-h-[90px] [&_>_span]:absolute [&_>_span]:bottom-[10px] [&_>_span]:right-[14px] [&_>_span]:text-[11px] [&_>_span]:text-[#838c9e] instating-textarea"}><textarea id="instating-introduction" value={application.introduction} onChange={event => update('introduction', event.target.value)} placeholder="함께할 친구에게 나를 소개해주세요!" maxLength={40} rows={3} aria-describedby="introduction-count" /><span id="introduction-count">{application.introduction.length} / 40</span></div>
             </div>
-            <label className={"flex gap-[14px] items-center bg-[#f6f8fc] [border:1px_solid_#eaf0fb] p-[18px] rounded-[8px] cursor-pointer [&_input]:w-[20px] [&_input]:h-[20px] [&_input]:shrink-0 [&_input]:accent-[#1554ff] [&_strong]:text-[13px] [&_strong]:font-[650] [&_small]:block [&_small]:mt-[5px] [&_small]:text-[11px] [&_small]:text-[#838c9e] [&_small]:leading-[1.6] instating-multiple"}><input type="checkbox" checked={application.multipleMatches} onChange={event => update('multipleMatches', event.target.checked)} /><span><strong>여러 명과 매칭해도 좋아요</strong><small>최대 3명과 매칭될 수 있어요.<br />선택하지 않으면 1명과 매칭돼요.</small></span></label>
           </div>}
 
           {step === 3 && <>
@@ -168,9 +161,7 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
                 <div><dt>인스타그램</dt><dd>@{application.instagram}</dd></div>
                 <div><dt>성별</dt><dd>{application.gender}</dd></div>
                 <div><dt>나이대</dt><dd>{application.age}</dd></div>
-                <div><dt>보고 싶은 공연</dt><dd>{selectedPerformance ? `${selectedPerformance.name} · ${selectedPerformance.start}` : '선택 안 함'}</dd></div>
-                <div><dt>여러 명 매칭</dt><dd>{application.multipleMatches ? '희망' : '희망하지 않음'}</dd></div>
-                <div><dt>관심 키워드</dt><dd className={"flex flex-wrap gap-[6px] [&_span]:text-[#1554ff] [&_span]:bg-[#e8efff] [&_span]:rounded-[4px] [&_span]:[padding:3px_7px] [&_span]:text-[11px] instating-summary-tags"}>{application.tags.map(tag => <span key={tag}>{tag}</span>)}</dd></div>
+                <div><dt>관심 키워드</dt><dd className={"flex flex-wrap gap-[6px] [&_span]:text-[#1554ff] [&_span]:bg-[#e8efff] [&_span]:rounded-[4px] [&_span]:[padding:3px_7px] [&_span]:text-[11px] instating-summary-tags"}>{application.tags.map(tag => <span key={tag}>{interestOptions.find(option => option.code === tag)?.label ?? tag}</span>)}</dd></div>
                 <div><dt>한 줄 소개</dt><dd>{application.introduction.trim() || '입력 안 함'}</dd></div>
               </dl>
             </div>
@@ -180,16 +171,18 @@ export default function InstatingApply({ onHome, onProfile, alreadyApplied = fal
               {consentLabels.map((label, index) => <label className={"text-[12px] text-[#788397] instating-consent"} key={label}><input type="checkbox" checked={consents[index]} required onChange={event => { setConsents(current => current.map((value, i) => i === index ? event.target.checked : value)); setError('') }} /><span>{label}</span></label>)}
             </fieldset>
           </>}
+          {tagsError && <p role="alert" className="mt-3 text-sm text-red-700">{tagsError}<button type="button" className="ml-2 underline" onClick={() => setTagReload(value => value + 1)}>다시 불러오기</button></p>}
+          {!canApply && <p role="status" className="mt-3 text-sm text-[#63708a]">접수 기간이 아니거나 신청 상태를 확인 중이에요.</p>}
           <p className={"text-[#c42d45] text-[13px] mt-[14px] [&:empty]:hidden instating-error"} role="alert">{error}</p>
-          <button className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} type="submit" disabled={saving}>{saving ? '신청 저장 중…' : step === 3 ? '신청 완료하기' : '다음 단계로'}</button>
-          <p className={"mt-[14px] text-[11px] text-center text-[#8390a5] leading-[1.6] instating-local-note"}>현재는 미리보기예요. 신청 정보는 이 브라우저에만 저장됩니다.</p>
+          <button className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} type="submit" disabled={saving || !canApply || interestOptions.length === 0}>{saving ? '신청 저장 중…' : step === 3 ? '신청 완료하기' : '다음 단계로'}</button>
+          <p className={"mt-[14px] text-[11px] text-center text-[#8390a5] leading-[1.6] instating-local-note"}>신청 완료 후 마이페이지에서 신청 내역을 확인할 수 있어요.</p>
         </form> : <section className={"text-center [padding:20px_0_8px] [&_h2]:text-[25px] [&_h2]:font-[750] [&_h2]:tracking-[-1px] [&_h2]:mt-[12px] [&_>_p]:text-[13px] [&_>_p]:leading-[1.8] [&_>_p]:text-[#8390a5] [&_>_p]:mt-[14px] instating-success"}>
           <span ref={heartRef} className={"grid place-items-center w-[96px] h-[96px] rounded-full [margin:0_auto_22px] bg-[#eef4ff] text-[#1554ff] text-[70px] instating-success-mark"} aria-hidden="true">♡</span>
           <span className={"block text-[10px] font-bold tracking-[2px] text-[#1554ff] instating-success-eyebrow"}>YOU'RE ON THE LIST</span>
           <h2 ref={headingRef} tabIndex={-1}>신청이 완료되었습니다!</h2>
           <p>축제를 함께 즐길 새로운 친구,<br />두근두근, 조금만 기다려주세요.</p>
-          <div className={"mt-[28px] [padding:26px_22px] text-left [border:1px_solid_#dfe8fb] rounded-[12px] [background:linear-gradient(140deg,#f1f6ff,#fff)] [&_>_span]:text-[9px] [&_>_span]:tracking-[1.5px] [&_>_span]:text-[#8795ac] [&_h3]:mt-[18px] [&_h3]:text-[19px] [&_h3]:font-bold [&_h3]:wrap-anywhere [&_>_p]:text-[#8390a5] [&_>_p]:text-[12px] [&_>_p]:leading-[1.8] [&_>_p]:mt-[8px] [&_>_div]:flex [&_>_div]:justify-between [&_>_div]:gap-[12px] [&_>_div]:mt-[24px] [&_>_div]:pt-[20px] [&_>_div]:[border-top:1px_dashed_#ccd9ee] [&_>_div]:text-[13px] [&_strong]:text-[#1554ff] instating-completion-ticket"}><span>2026 YU FESTA · INSTA-TING</span><h3>{application.nickname}님의 신청서</h3><p>@{application.instagram}</p><div><span>매칭 결과 발표</span><strong>시간 미정</strong></div><p>발표 후 마이페이지에서 카드를 두드려<br />나의 매칭 결과를 확인해보세요.</p></div>
-          <p className={"mt-[14px] text-[11px] text-center text-[#8390a5] leading-[1.6] instating-local-note"}>브라우저에 저장된 미리보기 신청 내역입니다.</p>
+          <div className={"mt-[28px] [padding:26px_22px] text-left [border:1px_solid_#dfe8fb] rounded-[12px] [background:linear-gradient(140deg,#f1f6ff,#fff)] [&_>_span]:text-[9px] [&_>_span]:tracking-[1.5px] [&_>_span]:text-[#8795ac] [&_h3]:mt-[18px] [&_h3]:text-[19px] [&_h3]:font-bold [&_h3]:wrap-anywhere [&_>_p]:text-[#8390a5] [&_>_p]:text-[12px] [&_>_p]:leading-[1.8] [&_>_p]:mt-[8px] [&_>_div]:flex [&_>_div]:justify-between [&_>_div]:gap-[12px] [&_>_div]:mt-[24px] [&_>_div]:pt-[20px] [&_>_div]:[border-top:1px_dashed_#ccd9ee] [&_>_div]:text-[13px] [&_strong]:text-[#1554ff] instating-completion-ticket"}><span>2026 YU FESTA · INSTA-TING</span><h3>{application.nickname}님의 신청서</h3><p>@{application.instagram}</p><div><span>매칭 결과 발표</span><strong>{publishAt && Number.isFinite(parseMatchTime(publishAt)) ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parseMatchTime(publishAt)) : '발표 예정'}</strong></div><p>발표 후 마이페이지에서 카드를 두드려<br />나의 매칭 결과를 확인해보세요.</p></div>
+          <p className={"mt-[14px] text-[11px] text-center text-[#8390a5] leading-[1.6] instating-local-note"}>서버에 신청이 접수되었습니다.</p>
           <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} onClick={onProfile}>마이페이지에서 확인하기</button>
           <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer text-[#758198] mt-[8px] instating-secondary"} onClick={onHome}>홈으로 돌아가기</button>
         </section>}
