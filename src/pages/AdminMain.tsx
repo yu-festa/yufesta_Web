@@ -8,6 +8,9 @@ import AdminRounds from './admin/AdminRounds'
 import AdminReports from './admin/AdminReports'
 import AdminNotices from './admin/AdminNotices'
 import AdminPlaces from './admin/AdminPlaces'
+import AdminTimetable from './admin/AdminTimetable'
+import AdminClubs from './admin/AdminClubs'
+import AdminModeration from './admin/AdminModeration'
 import './admin/admin.css'
 
 const tabs = [
@@ -15,6 +18,9 @@ const tabs = [
   { id: 'reports', label: '신고 검토', detail: '안전한 만남', icon: '✓' },
   { id: 'notices', label: '공지', detail: '축제 소식', icon: '≡' },
   { id: 'places', label: '장소 · 이벤트', detail: '축제 지도', icon: '⌖' },
+  { id: 'timetable', label: '타임테이블', detail: '공연 일정', icon: '◷' },
+  { id: 'clubs', label: '공연 동아리', detail: '출연진 정보', icon: '♫' },
+  { id: 'moderation', label: '콘텐츠 관리', detail: '응원 · 분실물', icon: '⚑' },
 ] as const
 type Tab = typeof tabs[number]['id']
 const currentTab = (): Tab => tabs.find(tab => `#${tab.id}` === window.location.hash)?.id ?? 'rounds'
@@ -52,6 +58,9 @@ export default function AdminMain({ role, onLogout, onAuthError, onRefreshAuth }
           {tab === 'reports' && <AdminReports />}
           {tab === 'notices' && <AdminNotices />}
           {tab === 'places' && <AdminPlaces />}
+          {tab === 'timetable' && <AdminTimetable />}
+          {tab === 'clubs' && <AdminClubs />}
+          {tab === 'moderation' && <AdminModeration />}
         </>}
       </AdminErrorContext.Provider>
       <footer className="admin-footer">YU FESTA 운영자 센터 · 모든 시각은 한국 시간 기준</footer>
