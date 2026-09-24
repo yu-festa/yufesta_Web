@@ -1,92 +1,92 @@
-// 첨부된 디자인의 예시 일정입니다. 실제 축제 일정 공개 시 이 데이터를 교체합니다.
+import type { TimetableSlot } from '../api/timetable.ts'
+import { parseMatchTime } from '../utils/match.ts'
+
 export const festivalTitle = '2026 영남대학교 가을축제'
-
-export type Performance = {
-  id: string
-  name: string
-  stage: 0 | 1
-  start: string
-  end: string
-  highlight?: 'light' | 'blue'
-  isLive?: boolean
-}
-
-export const stages = ['LAND STAGE', 'LAND STAGE'] as const
-
-export const performances: Performance[] = [
-  { id: 'tensional', name: '텐셔널 순간들', stage: 0, start: '15:00', end: '15:40', highlight: 'light', isLive: true },
-  { id: 'sawi', name: '사위', stage: 1, start: '15:45', end: '16:25', highlight: 'blue' },
-  { id: 'green-flame', name: '초록불꽃소년단', stage: 0, start: '16:30', end: '17:10' },
-  { id: 'the-chairs', name: 'THE CHAIRS', stage: 1, start: '17:15', end: '17:55' },
-  { id: 'goonam', name: '구남과여라이딩스텔라', stage: 0, start: '18:00', end: '18:40' },
-  { id: 'sumin', name: 'SUMIN', stage: 1, start: '18:45', end: '19:25' },
-  { id: 'minami-deutsch', name: 'MINAMI DEUTSCH', stage: 0, start: '19:30', end: '20:10' },
-  { id: 'kim-hyunchul', name: '김현철', stage: 1, start: '20:15', end: '20:55' },
-  { id: 'babo', name: '바보', stage: 0, start: '21:00', end: '21:40' },
-  { id: 'kim-mingyu', name: '김민규', stage: 1, start: '21:45', end: '22:25' },
-  { id: 'telepopmusik', name: 'TELEPOPMUSIK (DJ SET)', stage: 0, start: '22:40', end: '23:30' },
-  { id: 'ko-shin-moon', name: 'KO SHIN MOON', stage: 1, start: '23:35', end: '24:15' },
-  { id: 'hitech', name: 'HITECH', stage: 0, start: '24:20', end: '25:10' },
-]
-
-// 24시 이후 표기도 다음 날의 연속된 분으로 계산합니다.
-export function toMinutes(time: string) {
-  const [hours, minutes] = time.split(':').map(Number)
-  return hours * 60 + minutes
-}
-
-export const timetableLayout = {
-  width: 390,
-  left: 48,
-  columnWidth: 164,
-  headerHeight: 26,
-  scheduleTop: 64,
-  pixelsPerMinute: 2.12,
-  start: toMinutes('15:00'),
-  end: toMinutes('25:10'),
-}
-
-export const timetableHeight = timetableLayout.scheduleTop
-  + (timetableLayout.end - timetableLayout.start) * timetableLayout.pixelsPerMinute + 20
 
 type Rectangle = { kind: 'rect'; x: number; y: number; width: number; height: number; fill: string; shadow?: boolean }
 type Circle = { kind: 'circle'; x: number; y: number; radius: number; fill: string }
 type Label = { kind: 'text'; x: number; y: number; text: string; size: number; weight: number; fill: string; anchor: 'middle' | 'end' }
 export type TimetableShape = Rectangle | Circle | Label
+export type TimetableLayout = { width: number; height: number; left: number; columnWidth: number; scheduleTop: number; pixelsPerMinute: number }
 
-// 화면과 저장 이미지가 같은 도형·좌표·텍스트를 사용합니다.
-export function getTimetableShapes(): TimetableShape[] {
-  const { left, columnWidth, headerHeight, scheduleTop, pixelsPerMinute, start, end } = timetableLayout
+const KST_MINUTES = 9 * 60
+const MINUTES_PER_DAY = 24 * 60
+const columnWidth = 164
+const left = 48
+const scheduleTop = 64
+const headerHeight = 26
+
+function kstMinute(value: string) {
+  const time = parseMatchTime(value)
+  return Number.isFinite(time) ? Math.floor(time / 60000) + KST_MINUTES : NaN
+}
+
+function timeLabel(minute: number, firstDay: number) {
+  const elapsed = minute - firstDay * MINUTES_PER_DAY
+  return `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
+}
+
+function shortTitle(title: string, width: number) {
+  const budget = (width - 16) / 13
+  let used = 0
+  let result = ''
+  for (const letter of title) {
+    const cost = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/u.test(letter) ? 1 : 0.58
+    if (used + cost > budget) return `${result.trimEnd()}…`
+    result += letter
+    used += cost
+  }
+  return result
+}
+
+// 화면 SVG와 저장 PNG는 이 도형·좌표를 공유합니다. 시간은 서버 응답의 KST 기준으로 계산합니다.
+export function buildTimetable(slots: TimetableSlot[]): { layout: TimetableLayout; shapes: TimetableShape[] } {
+  const valid = slots.map(slot => ({ slot, start: kstMinute(slot.effectiveStartAt), end: kstMinute(slot.effectiveEndAt) }))
+    .filter(item => Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start)
+    .sort((a, b) => a.start - b.start || a.slot.sortOrder - b.slot.sortOrder)
+  const stageKeys = [...new Set(valid.map(item => String(item.slot.stage?.placeId ?? 'unknown')))]
+  const stageNames = stageKeys.map(key => valid.find(item => String(item.slot.stage?.placeId ?? 'unknown') === key)?.slot.stage?.name ?? '장소 미정')
+  // 기존 디자인은 같은 무대의 공연도 좌우 두 칸에 번갈아 배치했습니다.
+  const stageCount = Math.max(2, stageKeys.length)
+  const displayColumnWidth = columnWidth
+  const earliest = valid.length ? Math.min(...valid.map(item => item.start)) : 0
+  const latest = valid.length ? Math.max(...valid.map(item => item.end)) : 60
+  const start = Math.floor(earliest / 60) * 60
+  const end = Math.ceil(latest / 60) * 60
+  const shortest = Math.min(...valid.map(item => item.end - item.start), 40)
+  const pixelsPerMinute = Math.max(2.12, Math.min(6, 52 / shortest))
+  const layout = { width: left + displayColumnWidth * stageCount + 14, height: scheduleTop + (end - start) * pixelsPerMinute + 20, left, columnWidth: displayColumnWidth, scheduleTop, pixelsPerMinute }
   const shapes: TimetableShape[] = []
   const liveBadges: TimetableShape[] = []
-  stages.forEach((name, index) => {
-    const x = left + index * columnWidth
-    shapes.push({ kind: 'rect', x, y: 0, width: columnWidth, height: headerHeight, fill: index === 0 ? '#cddcff' : '#7d9dff' })
-    shapes.push({ kind: 'text', x: x + columnWidth / 2, y: headerHeight / 2, text: name, size: 11, weight: 500, fill: '#111111', anchor: 'middle' })
+  const firstDay = Math.floor(start / MINUTES_PER_DAY)
+
+  const displayStages = stageKeys.length === 1 ? [stageNames[0], stageNames[0]] : stageNames
+  displayStages.forEach((name, index) => {
+    const x = left + index * displayColumnWidth
+    shapes.push({ kind: 'rect', x, y: 0, width: displayColumnWidth, height: headerHeight, fill: index % 2 === 0 ? '#cddcff' : '#7d9dff' })
+    shapes.push({ kind: 'text', x: x + displayColumnWidth / 2, y: headerHeight / 2, text: name, size: 11, weight: 500, fill: '#111111', anchor: 'middle' })
   })
   for (let minute = start; minute <= end; minute += 60) {
-    shapes.push({ kind: 'text', x: left - 12, y: scheduleTop + (minute - start) * pixelsPerMinute,
-      text: `${Math.floor(minute / 60)}:00`, size: 10, weight: 500, fill: '#111111', anchor: 'end' })
+    shapes.push({ kind: 'text', x: left - 12, y: scheduleTop + (minute - start) * pixelsPerMinute, text: timeLabel(minute, firstDay), size: 10, weight: 500, fill: '#111111', anchor: 'end' })
   }
-  for (const performance of performances) {
-    const x = left + performance.stage * columnWidth
-    const y = scheduleTop + (toMinutes(performance.start) - start) * pixelsPerMinute
-    const duration = toMinutes(performance.end) - toMinutes(performance.start)
-    const height = duration * pixelsPerMinute
-    const centerX = x + columnWidth / 2
+  valid.forEach(({ slot, start: slotStart, end: slotEnd }, index) => {
+    const stage = stageKeys.length === 1 ? index % 2 : stageKeys.indexOf(String(slot.stage?.placeId ?? 'unknown'))
+    const x = left + stage * displayColumnWidth
+    const y = scheduleTop + (slotStart - start) * pixelsPerMinute
+    const height = (slotEnd - slotStart) * pixelsPerMinute
+    const centerX = x + displayColumnWidth / 2
     const centerY = y + height / 2
-    const fill = performance.highlight === 'light' ? '#cddcff' : performance.highlight === 'blue' ? '#7d9dff' : '#ebebeb'
-    shapes.push({ kind: 'rect', x, y, width: columnWidth, height, fill, shadow: Boolean(performance.highlight) })
-    shapes.push({ kind: 'text', x: centerX, y: centerY - 13, text: performance.name, size: performance.name.length > 20 ? 13 : 15, weight: 500, fill: '#111111', anchor: 'middle' })
-    shapes.push({ kind: 'text', x: centerX, y: centerY + 5, text: `${performance.start}-${performance.end}`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
-    shapes.push({ kind: 'text', x: centerX, y: centerY + 19, text: `(${duration}분)`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
-    if (performance.isLive) {
-      // 카드 오른쪽 위 모서리에 걸치되, 오른쪽 스테이지에서도 화면 안에 들어옵니다.
-      const badgeX = x + columnWidth - 2
+    const fill = index === 0 ? '#cddcff' : index === 1 ? '#7d9dff' : '#ebebeb'
+    shapes.push({ kind: 'rect', x, y, width: displayColumnWidth, height, fill, shadow: index < 2 })
+    shapes.push({ kind: 'text', x: centerX, y: centerY - (height < 60 ? 7 : 13), text: shortTitle(slot.title, displayColumnWidth), size: slot.title.length > 20 ? 12 : 15, weight: 500, fill: '#111111', anchor: 'middle' })
+    shapes.push({ kind: 'text', x: centerX, y: centerY + (height < 60 ? 10 : 5), text: `${timeLabel(slotStart, firstDay)}-${timeLabel(slotEnd, firstDay)}`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
+    if (height >= 60) shapes.push({ kind: 'text', x: centerX, y: centerY + 19, text: `(${slotEnd - slotStart}분)`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
+    if (slot.isLive) {
+      const badgeX = x + displayColumnWidth - 2
       const badgeY = y + 2
       liveBadges.push({ kind: 'circle', x: badgeX, y: badgeY, radius: 16, fill: '#ff2028' })
       liveBadges.push({ kind: 'text', x: badgeX, y: badgeY, text: 'LIVE', size: 11, weight: 700, fill: '#ffffff', anchor: 'middle' })
     }
-  }
-  return [...shapes, ...liveBadges]
+  })
+  return { layout, shapes: [...shapes, ...liveBadges] }
 }

@@ -5,6 +5,7 @@ export type InstatingApplication = {
   age: string
   tags: string[]
   performance: string
+  wantedSlotId?: number | null
   introduction: string
   multipleMatches: boolean
 }
@@ -12,7 +13,7 @@ export type InstatingApplication = {
 export type MatchResult =
   | { status: 'pending' }
   | { status: 'unmatched' }
-  | { status: 'matched'; partners: { matchId?: number; nickname: string; instagram: string; ageBand?: string | null; tags?: string[]; commonTags?: string[]; intro?: string | null }[] }
+  | { status: 'matched'; partners: { matchId?: number; nickname: string; instagram: string; ageBand?: string | null; tags?: string[]; commonTags?: string[]; intro?: string | null; wantedSlot?: { title: string; stageName: string; startAt: string } | null; sameSlot?: boolean }[] }
 
 export type SavedApplication = InstatingApplication & { id: string; submittedAt: string }
 export const APPLICATION_STORAGE_KEY = 'yufesta.instating.applications.v1'

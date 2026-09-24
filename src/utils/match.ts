@@ -30,6 +30,7 @@ export function toMatchApplicationUpdate(application: InstatingApplication, opti
   return {
     nickname, instagramId, gender: application.gender === '남' ? 'M' : 'F', ageBand: ageBand ?? null,
     tags: tags as MatchApplicationRequest['tags'], intro: application.introduction.trim() || null,
+    wantedSlotId: application.wantedSlotId ?? null,
   }
 }
 
@@ -39,5 +40,5 @@ export function toMatchApplicationRequest(application: InstatingApplication, opt
 }
 
 export function applicationToForm(application: MatchApplication): InstatingApplication {
-  return { nickname: application.nickname, instagram: application.instagramId, gender: application.gender === 'M' ? '남' : '여', age: Object.entries(ageBands).find(([, value]) => value === application.ageBand)?.[0] ?? '', tags: application.tags, introduction: application.intro ?? '', performance: '', multipleMatches: false }
+  return { nickname: application.nickname, instagram: application.instagramId, gender: application.gender === 'M' ? '남' : '여', age: Object.entries(ageBands).find(([, value]) => value === application.ageBand)?.[0] ?? '', tags: application.tags, introduction: application.intro ?? '', performance: '', wantedSlotId: application.needsSlotReselect ? null : application.wantedSlot?.id ?? null, multipleMatches: false }
 }

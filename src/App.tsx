@@ -3,7 +3,6 @@ import Main from './pages/Main'
 import Splash from './pages/Splash'
 import Timetable from './pages/Timetable'
 import PerformanceDetail from './pages/PerformanceDetail'
-import { performanceDetails } from './data/performanceDetails'
 import Cheers from './pages/Cheers'
 import Notices from './pages/Notices'
 import LostFound from './pages/LostFound'
@@ -65,8 +64,8 @@ const App = () => {
   const lostScrollRef = useRef(0)
   const [lostPostId, setLostPostId] = useState(getLostPostId)
   const festivalOpened = useFestivalOpening(festivalStart)
-  const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'admin', 'profile', 'instating-result', 'instating-apply', 'instating-edit', 'login'].includes(requestedPage)
-  const { authStatus, role, summary: matchSummary, profile: serverProfile, application, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt } = useMatchState(needsMatchState, requestedPage === 'admin')
+  const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'admin', 'profile', 'instating-result', 'instating-apply', 'instating-edit', 'login', 'lost', 'lost-write', 'lost-detail', 'cheers'].includes(requestedPage)
+  const { authStatus, role, summary: matchSummary, profile: serverProfile, application, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt } = useMatchState(needsMatchState, ['admin', 'lost', 'lost-write', 'lost-detail', 'cheers'].includes(requestedPage))
   const profileAccess = resolveProfileAccess(serverProfile, previewEnabled)
   const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
   const [performanceId, setPerformanceId] = useState(() => window.location.hash.startsWith('#performance/') ? window.location.hash.slice('#performance/'.length) : '')
@@ -211,11 +210,11 @@ const App = () => {
         {needsMatchState && matchError && <div className="mx-auto max-w-[480px] bg-red-50 px-5 py-3 text-sm text-red-800" role="alert">{matchError}<button type="button" className="ml-3 underline disabled:opacity-50" disabled={refreshing} onClick={() => void refresh()}>다시 불러오기</button></div>}
         {page === 'landing' && <Landing target={festivalStart} />}
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
-        {page === 'performance' && <PerformanceDetail performance={performanceDetails.find(item => encodeURIComponent(item.id) === performanceId)} onBack={closePage} onHome={goHome} />}
+        {page === 'performance' && <PerformanceDetail clubId={/^\d+$/.test(performanceId) ? Number(performanceId) : null} onBack={closePage} onHome={goHome} />}
         {page === 'notices' && <Notices noticeId={noticeId} onHome={goHome} onBack={() => noticeId === null ? goHome() : openPage('notices')} onOpen={openNotice} />}
-        {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
+        {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} isAuthenticated={authStatus === 'authenticated'} onLogin={openLogin} />}
         {page === 'map' && <MapLoadBoundary onBack={closePage}><Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense></MapLoadBoundary>}
-        {(page === 'lost' || page === 'lost-write' || page === 'lost-detail') && <LostFound isWriting={page === 'lost-write'} postId={page === 'lost-detail' ? lostPostId : null} onOpenPost={openLostPost} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
+        {(page === 'lost' || page === 'lost-write' || page === 'lost-detail') && <LostFound isWriting={page === 'lost-write'} postId={page === 'lost-detail' ? lostPostId : null} onOpenPost={openLostPost} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} isAuthenticated={authStatus === 'authenticated'} onLogin={openLogin} />}
         {requiresAuthentication && authStatus === 'unavailable' && !profileAccess.isPreview && <p className="mx-auto max-w-[480px] px-5 py-20 text-center text-sm text-[#63708a]">서버 연결을 확인한 후 다시 불러와 주세요.</p>}
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
         {(page === 'main' || page === 'admin' || page === 'profile' || page === 'instating-result' || page === 'instating-apply' || page === 'instating-edit') && authStatus === 'loading' && <div className="grid min-h-dvh place-items-center text-sm text-[#63708a]" role="status">로그인 상태를 확인하고 있어요…</div>}

@@ -6,8 +6,9 @@ import InstatingHeader from '../components/InstatingHeader'
 import { ApiError } from '../api/client'
 import { applicationToForm, toMatchApplicationUpdate, toMatchApplicationRequest, parseMatchTime } from '../utils/match'
 import type { InstatingApplication as Application } from '../utils/instating'
-import { createMatchApplication, updateMyApplication, getMatchTags } from '../api/match'
+import { createMatchApplication, updateMyApplication, getMatchTags, getMatchSlots } from '../api/match'
 import type { MatchTagOption, MatchApplication } from '../api/match'
+import { usePublicResource } from '../hooks/usePublicResource'
 
 const heartbeatFrames: Keyframe[] = [{ transform: 'scale(1)', offset: 0 }, { transform: 'scale(1.08)', offset: .15 }, { transform: 'scale(1.02)', offset: .28 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1)', offset: 1 }]
 const heartbeatTiming: KeyframeAnimationOptions = { duration: 1800, iterations: Infinity, easing: 'ease-in-out' }
@@ -25,6 +26,8 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [interestOptions, setInterestOptions] = useState<MatchTagOption[]>([])
+  const slotsResource = usePublicResource(getMatchSlots)
+  const slots = slotsResource.data?.slots ?? []
   const heartRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, `${step}-${alreadyApplied}`)
   const submitting = useRef(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -65,6 +68,10 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
 
     if (step === 3 && !editing && !allConsented) {
       setError('필수 항목에 모두 동의해 주세요.')
+      return
+    }
+    if (step === 3 && application.wantedSlotId && !slots.some(slot => slot.id === application.wantedSlotId)) {
+      setError('선호 공연 목록이 변경됐어요. 공연을 다시 선택해 주세요.')
       return
     }
     setError('')
@@ -147,7 +154,14 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
               <div className={"flex flex-wrap gap-[10px] [&_.instating-option_>_span]:[padding:0_18px] [&_.instating-option_>_span]:rounded-[24px] [&_.instating-option_>_span]:min-h-[40px] [&_.instating-option_>_span]:text-[13px] instating-tags"} aria-describedby="interest-help">{interestOptions.map(tag => <label key={tag.code} className={"relative block cursor-pointer [&_input]:absolute [&_input]:w-[1px] [&_input]:h-[1px] [&_input]:opacity-[0] [&_>_span]:flex [&_>_span]:justify-center [&_>_span]:items-center [&_>_span]:gap-[8px] [&_>_span]:min-h-[46px] [&_>_span]:[border:1px_solid_#e0e4ec] [&_>_span]:rounded-[8px] [&_>_span]:text-[14px] [&_>_span]:[transition:background_.15s] [&_input[type=radio]_+_span::before]:[content:''] [&_input[type=radio]_+_span::before]:w-[15px] [&_input[type=radio]_+_span::before]:h-[15px] [&_input[type=radio]_+_span::before]:[border:1px_solid_#c3cad7] [&_input[type=radio]_+_span::before]:rounded-full [&_input:checked_+_span]:[border-color:#1554ff] [&_input:checked_+_span]:bg-[#f1f5ff] [&_input:checked_+_span]:text-[#1554ff] [&_input:checked_+_span]:font-[650] [&_input[type=radio]:checked_+_span::before]:[border:4px_solid_#1554ff] [&_input[type=radio]:checked_+_span::before]:bg-white [&_input:disabled_+_span]:opacity-[.4] [&_input:disabled_+_span]:cursor-not-allowed [&_input:focus-visible_+_span]:[outline:2px_solid_#1554ff] [&_input:focus-visible_+_span]:outline-offset-[3px] instating-option"}><input type="checkbox" checked={application.tags.includes(tag.code)} disabled={application.tags.length >= 3 && !application.tags.includes(tag.code)} onChange={event => update('tags', event.target.checked ? [...application.tags, tag.code] : application.tags.filter(item => item !== tag.code))} /><span>{tag.label}</span></label>)}</div>
             </fieldset>
             <div className={"min-w-[0] [&_>_label]:block [&_>_label]:text-[15px] [&_>_label]:font-[650] [&_>_label]:mb-[10px] [&_legend]:block [&_legend]:text-[15px] [&_legend]:font-[650] [&_legend]:mb-[10px] [&_b]:text-[#1554ff] [&_>_input]:w-full [&_>_input]:[border:1px_solid_#e0e4ec] [&_>_input]:rounded-[8px] [&_>_input]:bg-white [&_select]:w-full [&_select]:[border:1px_solid_#e0e4ec] [&_select]:rounded-[8px] [&_select]:bg-white [&_>_input]:min-h-[50px] [&_>_input]:[padding:12px_14px] [&_>_input]:text-[16px] [&_select]:min-h-[50px] [&_select]:[padding:12px_14px] [&_select]:text-[16px] [&_input::placeholder]:text-[#a1a7b3] [&_textarea::placeholder]:text-[#a1a7b3] instating-field"}>
-              <label htmlFor="instating-introduction">한 줄 소개</label>
+              <label htmlFor="instating-wanted-slot">함께 보고 싶은 공연 (선택)</label>
+              <select id="instating-wanted-slot" className="mb-2 min-h-[50px] w-full rounded-[8px] border border-[#e0e4ec] bg-white px-3 text-sm" value={application.wantedSlotId ?? ''} onChange={event => update('wantedSlotId', event.target.value ? Number(event.target.value) : null)}>
+                <option value="">선택 안 함</option>
+                {slots.map(slot => <option key={slot.id} value={slot.id}>{slot.title} · {slot.stageName} · {new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parseMatchTime(slot.startAt))}</option>)}
+              </select>
+              {initialApplication?.needsSlotReselect && <p className="text-xs text-[#1554ff]">이전 공연을 현재 회차에서 사용할 수 없어 다시 선택해 주세요.</p>}
+              {slotsResource.error && <p role="alert" className="mt-2 text-xs text-red-700">공연 목록을 불러오지 못했어요. <button type="button" className="underline" onClick={() => void slotsResource.refresh()}>다시 불러오기</button></p>}
+              <label htmlFor="instating-introduction" className="mt-6">한 줄 소개</label>
               <div className={"w-full [border:1px_solid_#e0e4ec] rounded-[8px] bg-white relative pb-[24px] [&_textarea]:w-full [&_textarea]:block [&_textarea]:p-[14px] [&_textarea]:resize-none [&_textarea]:text-[16px] [&_textarea]:min-h-[90px] [&_>_span]:absolute [&_>_span]:bottom-[10px] [&_>_span]:right-[14px] [&_>_span]:text-[11px] [&_>_span]:text-[#838c9e] instating-textarea"}><textarea id="instating-introduction" value={application.introduction} onChange={event => update('introduction', event.target.value)} placeholder="함께할 친구에게 나를 소개해주세요!" maxLength={40} rows={3} aria-describedby="introduction-count" /><span id="introduction-count">{application.introduction.length} / 40</span></div>
             </div>
           </div>}
@@ -161,6 +175,7 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
                 <div><dt>성별</dt><dd>{application.gender}</dd></div>
                 <div><dt>나이대</dt><dd>{application.age || '선택 안 함'}</dd></div>
                 <div><dt>관심 키워드</dt><dd className={"flex flex-wrap gap-[6px] [&_span]:text-[#1554ff] [&_span]:bg-[#e8efff] [&_span]:rounded-[4px] [&_span]:[padding:3px_7px] [&_span]:text-[11px] instating-summary-tags"}>{application.tags.length === 0 && '선택 안 함'}{application.tags.map(tag => <span key={tag}>{interestOptions.find(option => option.code === tag)?.label ?? tag}</span>)}</dd></div>
+                <div><dt>선호 공연</dt><dd>{slots.find(slot => slot.id === application.wantedSlotId)?.title ?? '선택 안 함'}</dd></div>
                 <div><dt>한 줄 소개</dt><dd>{application.introduction.trim() || '입력 안 함'}</dd></div>
               </dl>
             </div>

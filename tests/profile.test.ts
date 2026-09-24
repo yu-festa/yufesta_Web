@@ -29,7 +29,7 @@ test('로그인 사용자는 미리보기 설정과 관계없이 본인 정보�
 test('서버 신청 내역을 프로필 참여 내역으로 변환한다', () => {
   const user = profileFromApplication({
     id: 12, roundSeq: 2, instagramId: 'yu.festa', nickname: '펭귄', gender: 'F', ageBand: '22-24',
-    tags: ['PERFORMANCE', 'MUSIC'], intro: '같이 공연 봐요', entryType: 'NEW', createdAt: '2026-09-22T12:00:00',
+    tags: ['PERFORMANCE', 'MUSIC'], intro: '같이 공연 봐요', wantedSlot: null, needsSlotReselect: false, entryType: 'NEW', createdAt: '2026-09-22T12:00:00',
   })
   assert.equal(user.name, '펭귄')
   assert.equal(user.instagram, 'yu.festa')

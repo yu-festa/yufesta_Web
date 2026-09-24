@@ -20,11 +20,12 @@ const summary: MatchSummary = {
   nextRound: null, applicantCount: 100, my: { applied: false, lastResult: { roundSeq: 1, status: 'MATCHED' } },
 }
 
-test('신청 정보를 정규화하고 태그 코드·세 가지 동의만 명세 필드로 전송한다', () => {
+test('신청 정보를 정규화하고 태그·공연 선택·세 가지 동의를 명세 필드로 전송한다', () => {
   assert.deepEqual(toMatchApplicationRequest(form, options, [true, true, true]), {
-    nickname: '펭귄', instagramId: 'yu.festa', gender: 'F', ageBand: '22-24', tags: ['MUSIC', 'CAFE'], intro: '같이 공연 봐요', termsVersion: '2026-09-01', privacyVersion: '2026-09-01', ageConfirmed: true,
+    nickname: '펭귄', instagramId: 'yu.festa', gender: 'F', ageBand: '22-24', tags: ['MUSIC', 'CAFE'], intro: '같이 공연 봐요', wantedSlotId: null, termsVersion: '2026-09-01', privacyVersion: '2026-09-01', ageConfirmed: true,
   })
   assert.equal(toMatchApplicationRequest({ ...form, age: '19 - 21세' }, options, [true, true, true]).ageBand, '19-21')
+  assert.equal(toMatchApplicationRequest({ ...form, wantedSlotId: 7 }, options, [true, true, true]).wantedSlotId, 7)
   assert.throws(() => toMatchApplicationRequest(form, options, [true, false, true]), /동의/)
   for (const tags of [['음악'], ['MUSIC', 'MUSIC'], ['MUSIC', 'CAFE', 'MUSIC', 'CAFE']]) assert.throws(() => toMatchApplicationRequest({ ...form, tags }, options, [true, true, true]), /태그/)
 })
@@ -84,7 +85,7 @@ test('결과의 회차 선택과 신고 본문을 전달하고 발표 전 409와
 })
 
 const metadata = { roundSeq: 1, nextRoundSeq: 2, hasNextRoundApplication: false, canRejoin: true }
-const partner = { matchId: 77, nickname: '친구', instagramId: '@friend', ageBand: '22-24', intro: '공연 같이 봐요', tags: ['MUSIC', 'CAFE'], commonTags: ['MUSIC'] }
+const partner = { matchId: 77, nickname: '친구', instagramId: '@friend', ageBand: '22-24', intro: '공연 같이 봐요', tags: ['MUSIC', 'CAFE'], commonTags: ['MUSIC'], wantedSlot: { id: 4, title: 'HIPCOM', startAt: '2026-10-02T16:15:00', stageName: '중앙 무대' }, sameSlot: true }
 
 test('실제 partners 응답과 재참여 메타데이터를 보존하고 신고 후 빈 카드와 미매칭을 구분한다', () => {
   const result = toMatchResult({ ...metadata, status: 'MATCHED', partners: [partner, { ...partner, matchId: 78, instagramId: 'friend2' }] })
@@ -97,6 +98,8 @@ test('실제 partners 응답과 재참여 메타데이터를 보존하고 신고
   assert.equal(result.result.partners[0].instagram, 'friend')
   assert.deepEqual(result.result.partners[0].commonTags, ['MUSIC'])
   assert.equal(result.result.partners[0].intro, '공연 같이 봐요')
+  assert.equal(result.result.partners[0].wantedSlot?.title, 'HIPCOM')
+  assert.equal(result.result.partners[0].sameSlot, true)
   assert.deepEqual(toMatchResult({ ...metadata, status: 'MATCHED', partners: [] }).result, { status: 'matched', partners: [] })
   assert.deepEqual(toMatchResult({ ...metadata, status: 'UNMATCHED', partners: [], canRejoin: false }).result, { status: 'unmatched' })
   assert.equal(toMatchResult({ ...metadata, status: 'UNMATCHED', partners: [], nextRoundSeq: null, canRejoin: false }).nextRoundSeq, null)
@@ -109,13 +112,15 @@ test('선택 항목을 비워 신청하고 수정할 수 있으며 닉네임·�
   assert.equal(update.ageBand, null)
   assert.equal(update.intro, null)
   assert.deepEqual(update.tags, [])
+  assert.equal(toMatchApplicationUpdate({ ...form, wantedSlotId: 4 }, options).wantedSlotId, 4)
   assert.equal('termsVersion' in update, false)
   assert.equal('ageConfirmed' in update, false)
   assert.deepEqual(toMatchApplicationRequest(optional, options, [true, true, true]).tags, [])
   for (const nickname of [' ', '가', '123456789']) assert.throws(() => toMatchApplicationUpdate({ ...form, nickname }, options), /닉네임/)
   assert.throws(() => toMatchApplicationUpdate({ ...form, introduction: '가'.repeat(41) }, options), /40자/)
-  const application = { ...toMatchApplicationUpdate(form, options), id: 1, roundSeq: 1, entryType: 'CARRIED' as const, createdAt: '2026-09-24T00:00:00Z' }
+  const application = { ...toMatchApplicationUpdate(form, options), wantedSlot: null, needsSlotReselect: false, id: 1, roundSeq: 1, entryType: 'CARRIED' as const, createdAt: '2026-09-24T00:00:00Z' }
   assert.deepEqual(toMatchApplicationUpdate(applicationToForm(application), options), toMatchApplicationUpdate(form, options))
+  assert.equal(applicationToForm({ ...application, wantedSlot: { id: 4, title: '공연', slotType: 'CLUB', startAt: '2026-10-02T16:00:00', endAt: '2026-10-02T16:30:00', stagePlaceId: 1, stageName: '무대' }, needsSlotReselect: true }).wantedSlotId, null)
 })
 
 test('신청 PATCH는 동의 필드 없이 전송하고 갱신된 신청을 반환한다', async () => {
