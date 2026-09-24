@@ -15,16 +15,20 @@ import Landing from './pages/Landing'
 import { useFestivalOpening } from './hooks/useFestivalOpening'
 import { resolveFestivalStart } from './utils/festivalLaunch'
 import { markSplashSeen, shouldShowSplash } from './utils/splash'
-import { LOGIN_SUCCESS_PATH, logout } from './api/auth'
+import { logout } from './api/auth'
 import { useMatchState } from './hooks/useMatchState'
+import MapLoadBoundary from './components/MapLoadBoundary'
+import AdminMain from './pages/AdminMain'
+import { isAdminRole, loginDestination } from './utils/admin'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 const previewEnabled = import.meta.env.VITE_PROFILE_PREVIEW === 'true'
 
-type Page = 'entry' | 'main' | 'timetable' | 'performance' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'lost-detail' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
+type Page = 'entry' | 'main' | 'admin' | 'timetable' | 'performance' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'lost-detail' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
 
 function getPageFromHash(): Page {
+  if (window.location.pathname.replace(/\/$/, '') === '/admin') return 'admin'
   if (window.location.hash.startsWith('#lost/post/')) return 'lost-detail'
   if (window.location.hash.startsWith('#performance/')) return 'performance'
   if (window.location.hash.startsWith('#profile/result/')) return 'instating-result'
@@ -57,14 +61,20 @@ const App = () => {
   const lostScrollRef = useRef(0)
   const [lostPostId, setLostPostId] = useState(getLostPostId)
   const festivalOpened = useFestivalOpening(festivalStart)
-  const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'profile', 'instating-result', 'instating-apply', 'login'].includes(requestedPage)
-  const { authStatus, summary: matchSummary, profile: serverProfile, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt } = useMatchState(needsMatchState)
+  const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'admin', 'profile', 'instating-result', 'instating-apply', 'login'].includes(requestedPage)
+  const { authStatus, role, summary: matchSummary, profile: serverProfile, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt } = useMatchState(needsMatchState, requestedPage === 'admin')
   const profileAccess = resolveProfileAccess(serverProfile, previewEnabled)
   const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
   const [performanceId, setPerformanceId] = useState(() => window.location.hash.startsWith('#performance/') ? window.location.hash.slice('#performance/'.length) : '')
-  const requiresAuthentication = requestedPage === 'profile' || requestedPage === 'instating-result' || requestedPage === 'instating-apply'
+  const requiresAuthentication = requestedPage === 'profile' || requestedPage === 'instating-result' || requestedPage === 'instating-apply' || requestedPage === 'admin'
   const authenticatedLogin = requestedPage === 'login' && authStatus === 'authenticated' && !new URLSearchParams(window.location.search).has('error')
-  const page = authenticatedLogin ? 'main' : requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus === 'anonymous' && profileAccess.page === 'login' ? 'login' : requestedPage
+  const adminRole = authStatus === 'authenticated' && isAdminRole(role) ? role : null
+  const adminEntry = !!adminRole && (authenticatedLogin || ['main', 'profile', 'instating-result', 'instating-apply'].includes(requestedPage) || (requestedPage === 'entry' && festivalOpened))
+  const page = adminEntry ? 'admin' : authenticatedLogin ? 'main' : requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus === 'anonymous' && (requestedPage === 'admin' || profileAccess.page === 'login') ? 'login' : requestedPage
+  const handleAdminAuthError = useCallback((status: number) => {
+    if (status === 401) clearSession()
+    else void refresh()
+  }, [clearSession, refresh])
 
   useEffect(() => {
     // 루트 진입은 로그인 여부가 아니라 축제 시작 시각으로만 결정합니다.
@@ -75,13 +85,16 @@ const App = () => {
   }, [requestedPage, festivalOpened])
 
   useEffect(() => {
-    if (authenticatedLogin) window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
-  }, [authenticatedLogin])
+    if (adminEntry || authenticatedLogin) {
+      window.history.replaceState(null, '', loginDestination(role))
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    }
+  }, [adminEntry, authenticatedLogin, role])
 
   useEffect(() => { markSplashSeen() }, [])
 
   useEffect(() => {
-    if (authStatus === 'anonymous' && requiresAuthentication && profileAccess.page === 'login') {
+    if (authStatus === 'anonymous' && requiresAuthentication && (requestedPage === 'admin' || profileAccess.page === 'login')) {
       window.history.replaceState(window.history.state, '', '/#login')
     }
   }, [requestedPage, requiresAuthentication, profileAccess.page, authStatus])
@@ -188,15 +201,17 @@ const App = () => {
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
         {page === 'performance' && <PerformanceDetail performance={performanceDetails.find(item => encodeURIComponent(item.id) === performanceId)} onBack={closePage} onHome={goHome} />}
         {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
-        {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
+        {page === 'map' && <MapLoadBoundary onBack={closePage}><Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense></MapLoadBoundary>}
         {(page === 'lost' || page === 'lost-write' || page === 'lost-detail') && <LostFound isWriting={page === 'lost-write'} postId={page === 'lost-detail' ? lostPostId : null} onOpenPost={openLostPost} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
         {requiresAuthentication && authStatus === 'unavailable' && !profileAccess.isPreview && <p className="mx-auto max-w-[480px] px-5 py-20 text-center text-sm text-[#63708a]">서버 연결을 확인한 후 다시 불러와 주세요.</p>}
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
-        {(page === 'profile' || page === 'instating-result' || page === 'instating-apply') && authStatus === 'loading' && <div className="grid min-h-dvh place-items-center text-sm text-[#63708a]" role="status">로그인 상태를 확인하고 있어요…</div>}
+        {(page === 'main' || page === 'admin' || page === 'profile' || page === 'instating-result' || page === 'instating-apply') && authStatus === 'loading' && <div className="grid min-h-dvh place-items-center text-sm text-[#63708a]" role="status">로그인 상태를 확인하고 있어요…</div>}
+        {page === 'admin' && adminRole && <AdminMain role={adminRole} onLogout={signOut} onAuthError={handleAdminAuthError} onRefreshAuth={refresh} />}
+        {page === 'admin' && authStatus === 'authenticated' && !adminRole && <section className="mx-auto max-w-[480px] px-6 py-20 text-center"><h1 className="text-xl font-bold">운영자 전용 페이지입니다.</h1><p className="my-5 text-sm text-[#63708a]">이 계정에는 운영자 권한이 없어요. 등록된 운영자 계정으로 로그인해 주세요.</p><button className="rounded-xl bg-[#1554ff] px-6 py-3 text-white" onClick={goHome}>메인으로 돌아가기</button></section>}
         {page === 'profile' && (authStatus === 'authenticated' || profileAccess.isPreview) && (profileAccess.page === 'profile' ? <Profile user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} onHome={goHome} onResult={openResult} onApply={() => openPage('instating-apply')} onLogout={authStatus === 'authenticated' ? signOut : undefined} matchSummary={matchSummary} alreadyApplied={alreadyApplied} canApply={canApply} onChanged={refresh} /> : <Login onBack={closePage} onHome={goHome} />)}
         {page === 'instating-result' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={profileAccess.user.participations.find(item => encodeURIComponent(item.id) === resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} onChanged={refresh} />}
         {page === 'instating-apply' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} canApply={canApply} onSubmitted={refresh} publishAt={matchSummary?.currentRound.publishAt} />}
-        {page === 'main' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenPerformance={openPerformance} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} canApply={canApply} matchSummary={matchSummary} receivedAt={receivedAt} onApplyInstating={() => authStatus !== 'authenticated' ? openLogin() : alreadyApplied ? openProfile() : openPage('instating-apply')} onOpenProfile={() => authStatus === 'loading' ? openPage('profile') : profileAccess.page === 'login' ? openLogin() : openPage('profile')} />}
+        {page === 'main' && authStatus !== 'loading' && <Main onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenPerformance={openPerformance} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} canApply={canApply} matchSummary={matchSummary} receivedAt={receivedAt} onApplyInstating={() => authStatus !== 'authenticated' ? openLogin() : alreadyApplied ? openProfile() : openPage('instating-apply')} onOpenProfile={() => profileAccess.page === 'login' ? openLogin() : openPage('profile')} />}
       </div>
       {showSplash && <Splash onComplete={completeSplash} />}
     </>

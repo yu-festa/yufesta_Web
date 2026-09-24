@@ -1,9 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    { "source": "/admin", "destination": "/index.html" },
     {
-      "source": "/(.*)",
+      "source": "/main",
       "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/instating/apply",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    { "source": "/admin", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    {
+      "source": "/",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/main",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/login",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/instating/apply",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     }
   ]
 }
