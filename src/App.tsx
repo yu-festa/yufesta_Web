@@ -63,7 +63,7 @@ const App = () => {
   const [lostPostId, setLostPostId] = useState(getLostPostId)
   const festivalOpened = useFestivalOpening(festivalStart)
   const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'profile', 'instating-result', 'instating-apply', 'login'].includes(requestedPage)
-  const { authStatus, summary: matchSummary, profile: serverProfile, alreadyApplied, canApply, error: matchError, refreshing, refresh, receivedAt } = useMatchState(needsMatchState)
+  const { authStatus, summary: matchSummary, profile: serverProfile, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt } = useMatchState(needsMatchState)
   const profileAccess = resolveProfileAccess(serverProfile, previewEnabled)
   const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
   const [performanceId, setPerformanceId] = useState(() => window.location.hash.startsWith('#performance/') ? window.location.hash.slice('#performance/'.length) : '')
@@ -168,7 +168,7 @@ const App = () => {
 
   async function signOut() {
     await logout()
-    await refresh()
+    clearSession()
     goHome()
   }
 

@@ -8,6 +8,7 @@ import type { MatchSummary } from '../api/match'
 export default function Profile({ user, isPreview, onBack, onHome, onResult, onApply, onLogout, matchSummary, alreadyApplied = false, canApply = false, onChanged }: { user: ProfileUser; isPreview: boolean; onBack: () => void; onHome: () => void; onResult: (id: string) => void; onApply: () => void; onLogout?: () => Promise<void>; matchSummary?: MatchSummary | null; alreadyApplied?: boolean; canApply?: boolean; onChanged: () => Promise<void> }) {
   const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const logoutLock = useRef(false)
 
   const [action, setAction] = useState<'cancel' | 'rejoin' | null>(null)
   const [busy, setBusy] = useState(false)
@@ -32,11 +33,13 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
   }
 
   async function signOut() {
-    if (!onLogout || loggingOut) return
+    if (!onLogout || logoutLock.current) return
+    logoutLock.current = true
     setLoggingOut(true)
     setLogoutError('')
     try { await onLogout() }
-    catch { setLogoutError('로그아웃하지 못했어요. 잠시 후 다시 시도해 주세요.'); setLoggingOut(false) }
+    catch (error) { setLogoutError(error instanceof Error ? error.message : '로그아웃하지 못했어요. 잠시 후 다시 시도해 주세요.') }
+    finally { logoutLock.current = false; setLoggingOut(false) }
   }
 
   return (

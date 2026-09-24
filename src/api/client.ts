@@ -86,13 +86,24 @@ async function rawFetch(path: string, init: RequestInit = {}) {
 let csrfRequest: Promise<void> | null = null
 
 export async function ensureCsrfToken() {
-  if (readCookie('XSRF-TOKEN')) return
+  const existingToken = readCookie('XSRF-TOKEN')
+  if (existingToken) return existingToken
   if (!csrfRequest) {
     csrfRequest = rawFetch('/api/v1/auth/csrf').then(async response => {
       if (!response.ok) throw await parseError(response)
     }).finally(() => { csrfRequest = null })
   }
   await csrfRequest
+  const token = readCookie('XSRF-TOKEN')
+  if (!token) {
+    throw new ApiError({
+      status: 0,
+      code: 'CSRF_TOKEN_UNAVAILABLE',
+      message: '보안 인증 정보를 확인하지 못했어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+      errors: [],
+    })
+  }
+  return token
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -100,9 +111,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const headers = new Headers(init.headers)
 
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    await ensureCsrfToken()
-    const csrfToken = readCookie('XSRF-TOKEN')
-    if (csrfToken) headers.set('X-XSRF-TOKEN', csrfToken)
+    const csrfToken = await ensureCsrfToken()
+    headers.set('X-XSRF-TOKEN', csrfToken)
   }
   if (init.body && !headers.has('Content-Type') && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
