@@ -13,6 +13,7 @@
     "test:launch": "node --test tests/festival-launch.test.ts tests/splash.test.ts",
     "test:lost": "node --test tests/lost-found.test.ts",
     "test:map": "node --test tests/location.test.ts tests/restrooms.test.ts",
+    "test:admin": "node --test tests/admin.test.ts",
     "test:api": "node --test tests/api-client.test.ts tests/api-adapters.test.ts tests/match-api.test.ts tests/profile.test.ts"
   },
   "dependencies": {
