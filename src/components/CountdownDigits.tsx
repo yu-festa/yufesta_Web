@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { useMotion } from '../hooks/useMotion'
 
 const digitFrames: Keyframe[] = [
@@ -20,12 +21,10 @@ interface CountdownUnit {
 }
 
 export default function CountdownDigits({ units, className = '' }: { units: CountdownUnit[]; className?: string }) {
-  return <div className={`relative isolate grid gap-2 before:pointer-events-none before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-[radial-gradient(ellipse_at_center,#04163080_0%,transparent_72%)] @max-[350px]:gap-1.5 ${className}`} style={{ gridTemplateColumns: `repeat(${units.length}, minmax(0, 1fr))` }} aria-hidden="true">
-    {units.map(unit => <div className="flex min-w-0 items-end gap-1 @max-[350px]:gap-0.5" key={unit.label} data-testid="countdown-unit">
-      <div className="flex min-w-0 flex-1 gap-1 @max-[350px]:gap-0.5">
-        {String(unit.value).padStart(2, '0').split('').map((digit, index) => <CountdownDigit key={index} digit={digit} />)}
-      </div>
-      <span className="mb-1.5 shrink-0 text-[11px] leading-none font-normal text-[#c8ddf5] [text-shadow:0_1px_6px_#031329]">{unit.displayLabel ?? unit.label}</span>
-    </div>)}
+  return <div className={`relative isolate flex w-full items-end gap-1 before:pointer-events-none before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-[radial-gradient(ellipse_at_center,#04163080_0%,transparent_72%)] @max-[350px]:gap-0.5 ${className}`} aria-hidden="true">
+    {units.map(unit => <Fragment key={unit.label}>
+      {String(unit.value).padStart(2, '0').split('').map((digit, index) => <CountdownDigit key={index} digit={digit} />)}
+      <span className="mb-1.5 w-3 shrink-0 text-center text-[11px] leading-none font-normal text-[#c8ddf5] [text-shadow:0_1px_6px_#031329]">{unit.displayLabel ?? unit.label}</span>
+    </Fragment>)}
   </div>
 }
