@@ -1,3 +1,6 @@
+import { apiOrigin, apiRequestBase } from '../utils/apiConfig.ts'
+import type { ApiEnvironment } from '../utils/apiConfig.ts'
+
 export type ValidationError = {
   field: string
   value?: unknown
@@ -18,11 +21,10 @@ export type ApiErrorBody = {
   errors: ValidationError[]
 }
 
-type ViteEnv = { DEV?: boolean; VITE_API_BASE_URL?: string }
-const env = (import.meta as ImportMeta & { env?: ViteEnv }).env
-const configuredBaseUrl = env?.VITE_API_BASE_URL?.trim()
+const env = (import.meta as ImportMeta & { env?: ApiEnvironment }).env
 
-export const API_BASE_URL = (configuredBaseUrl || 'https://api.yufesta.com').replace(/\/$/, '')
+export const API_BASE_URL = apiOrigin(env)
+const requestBase = apiRequestBase(env)
 
 export class ApiError extends Error {
   readonly status: number
@@ -39,7 +41,7 @@ export class ApiError extends Error {
 }
 
 function apiUrl(path: string) {
-  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  return `${requestBase}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 function readCookie(name: string) {
@@ -99,7 +101,7 @@ export async function ensureCsrfToken() {
     throw new ApiError({
       status: 0,
       code: 'CSRF_TOKEN_UNAVAILABLE',
-      message: '보안 인증 정보를 확인하지 못했어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+      message: '보안 인증 정보를 확인하지 못했어요. 쿠키 허용 여부를 확인한 뒤 다시 시도해 주세요.',
       errors: [],
     })
   }
