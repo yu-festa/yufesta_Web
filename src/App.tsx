@@ -14,18 +14,13 @@ import { resolveProfileAccess } from './utils/profile'
 import Landing from './pages/Landing'
 import { useFestivalOpening } from './hooks/useFestivalOpening'
 import { resolveFestivalStart } from './utils/festivalLaunch'
+import { markSplashSeen, shouldShowSplash } from './utils/splash'
 import { LOGIN_SUCCESS_PATH, logout } from './api/auth'
 import { useMatchState } from './hooks/useMatchState'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 const previewEnabled = import.meta.env.VITE_PROFILE_PREVIEW === 'true'
-const SPLASH_SEEN_KEY = 'yufesta:splash-seen'
-
-function shouldShowSplash() {
-  try { return sessionStorage.getItem(SPLASH_SEEN_KEY) !== 'true' }
-  catch { return true }
-}
 
 type Page = 'entry' | 'main' | 'timetable' | 'performance' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'lost-detail' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
 
@@ -83,11 +78,7 @@ const App = () => {
     if (authenticatedLogin) window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
   }, [authenticatedLogin])
 
-  useEffect(() => {
-    if (!showSplash) return
-    try { sessionStorage.setItem(SPLASH_SEEN_KEY, 'true') }
-    catch { /* 저장소를 사용할 수 없으면 현재 페이지에서만 Splash를 유지한다. */ }
-  }, [showSplash])
+  useEffect(() => { markSplashSeen() }, [])
 
   useEffect(() => {
     if (authStatus === 'anonymous' && requiresAuthentication && profileAccess.page === 'login') {
