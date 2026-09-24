@@ -27,6 +27,8 @@ export type MatchSummary = {
 }
 
 export type MatchTagOption = { code: MatchTag; label: string }
+export type MatchSlot = { id: number; title: string; slotType: 'CLUB' | 'GUEST' | 'EVENT'; startAt: string; endAt: string; stagePlaceId: number; stageName: string }
+export type MatchSlots = { roundSeq: number; publishAt: string; slots: MatchSlot[] }
 
 export type MatchApplication = {
   id: number
@@ -37,6 +39,8 @@ export type MatchApplication = {
   ageBand: AgeBand | null
   tags: MatchTag[]
   intro: string | null
+  wantedSlot: MatchSlot | null
+  needsSlotReselect: boolean
   entryType: EntryType
   createdAt: string
 }
@@ -48,6 +52,7 @@ export type MatchApplicationRequest = {
   ageBand: AgeBand | null
   tags: MatchTag[]
   intro: string | null
+  wantedSlotId: number | null
   termsVersion: string
   privacyVersion: string
   ageConfirmed: boolean
@@ -70,7 +75,7 @@ export function rejoinMatch() {
   return apiRequest<MatchApplication>('/api/v1/match/applications/rejoin', { method: 'POST' })
 }
 
-export type MatchPartner = { matchId: number; nickname: string; ageBand: AgeBand | null; tags: MatchTag[]; commonTags: MatchTag[]; intro: string | null; instagramId: string }
+export type MatchPartner = { matchId: number; nickname: string; ageBand: AgeBand | null; tags: MatchTag[]; commonTags: MatchTag[]; intro: string | null; instagramId: string; wantedSlot: MatchSlot | null; sameSlot: boolean }
 export type MyMatchResult = { roundSeq: number; status: MatchResultStatus; partners: MatchPartner[]; nextRoundSeq: number | null; hasNextRoundApplication: boolean; canRejoin: boolean }
 export function getMyMatchResults(roundSeq?: number) {
   const query = roundSeq === undefined ? '' : `?${new URLSearchParams({ roundSeq: String(roundSeq) })}`
@@ -88,6 +93,10 @@ export function getMatchSummary() {
 
 export function getMatchTags() {
   return apiRequest<MatchTagOption[]>('/api/v1/match/tags')
+}
+
+export function getMatchSlots() {
+  return apiRequest<MatchSlots>('/api/v1/match/slots')
 }
 
 export function getMyApplication() {

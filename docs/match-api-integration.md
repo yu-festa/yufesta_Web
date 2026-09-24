@@ -1,7 +1,7 @@
 # 인스타팅 사용자 API 연결
 
 2026-09-24 public OpenAPI 명세를 확인하고 실제 응답 구조로 갱신했습니다.
-전체 18개 공개 API의 연결 화면, 동작, 운영 확인 사항은 [공개 API 연결 내역](./public-api-integration.md)을 참고하세요.
+전체 27개 공개 API의 연결 화면, 동작, 운영 확인 사항은 [공개 API 연결 내역](./public-api-integration.md)을 참고하세요.
 
 ## 기존 임시 계약에서 바뀐 부분
 

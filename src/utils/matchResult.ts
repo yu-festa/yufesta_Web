@@ -20,7 +20,9 @@ export function toMatchResult(data: unknown): ResultView {
     if ((item.ageBand != null && typeof item.ageBand !== 'string') || (item.intro != null && typeof item.intro !== 'string')) throw invalid()
     const instagram = item.instagramId.replace(/^@/, '')
     if (!/^[a-zA-Z0-9._]{1,30}$/.test(instagram)) throw invalid()
-    return { matchId: item.matchId as number, nickname: item.nickname, instagram, ageBand: item.ageBand as string | null, intro: item.intro as string | null, tags: item.tags as string[], commonTags: item.commonTags as string[] }
+    const wantedSlot = item.wantedSlot && typeof item.wantedSlot === 'object' ? item.wantedSlot as Record<string, unknown> : null
+    if (wantedSlot && (typeof wantedSlot.title !== 'string' || typeof wantedSlot.stageName !== 'string' || typeof wantedSlot.startAt !== 'string')) throw invalid()
+    return { matchId: item.matchId as number, nickname: item.nickname, instagram, ageBand: item.ageBand as string | null, intro: item.intro as string | null, tags: item.tags as string[], commonTags: item.commonTags as string[], wantedSlot: wantedSlot ? { title: wantedSlot.title as string, stageName: wantedSlot.stageName as string, startAt: wantedSlot.startAt as string } : null, sameSlot: item.sameSlot === true }
   })
   if (new Set(partners.map(partner => partner.matchId)).size !== partners.length) throw invalid()
   return { ...metadata, result: { status: 'matched', partners } }
