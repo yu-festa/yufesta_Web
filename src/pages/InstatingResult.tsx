@@ -11,6 +11,10 @@ import { getMyMatchResults } from '../api/match'
 import { ApiError } from '../api/client'
 import { toMatchResult } from '../utils/matchResult'
 import MatchReportForm from '../components/MatchReportForm'
+import MatchRejoin from '../components/MatchRejoin'
+import type { ResultView } from '../utils/matchResult'
+import { getMatchTags } from '../api/match'
+import { usePublicResource } from '../hooks/usePublicResource'
 
 const tapFrames: Keyframe[] = [{ transform: 'scale(.96) rotate(-1deg)', offset: 0 }, { transform: 'scale(1.015) rotate(1deg)', offset: .6 }, { transform: 'scale(1) rotate(0)', offset: 1 }]
 const tapTiming: KeyframeAnimationOptions = { duration: 280, easing: 'ease-out' }
@@ -27,6 +31,7 @@ const openFrames: Keyframe[] = [{ opacity: 0, transform: 'perspective(800px) rot
 const openTiming: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }
 
 function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; isDemo: boolean; onClose: () => void; onReported: (matchId: number) => void }) {
+  const tags = usePublicResource(getMatchTags)
   const [taps, setTaps] = useState(0)
   const [copyMessage, setCopyMessage] = useState('')
   const heading = useRef<HTMLHeadingElement>(null)
@@ -64,6 +69,10 @@ function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; 
       <img className={"block w-[230px] h-[230px] object-contain max-w-full [margin:6px_auto_14px] match-purma"} src={result.status === 'matched' ? purmaSuccess : purmaUnmatched} alt={result.status === 'matched' ? '하트를 안고 기뻐하는 푸르마' : '작은 하트를 안고 위로하는 푸르마'} width="240" height="240" />
       {result.status === 'matched' ? <div className={"grid gap-[22px] match-partners"}>{result.partners.map(partner => <div className={"[&_>_p:first-child]:text-[16px] [&_>_p:first-child]:font-bold [&_>_p:first-child]:mb-[14px] [&_>_p_>_span]:text-[12px] [&_>_p_>_span]:font-normal [&_>_p_>_span]:ml-[6px] [&_>_p_>_span]:text-[#7b89a3] match-partner"} key={partner.instagram}>
         <p>{partner.nickname}<span>님과 함께해요</span></p>
+        {partner.ageBand && <p className="mb-2 text-xs text-[#63708a]">{partner.ageBand === '28+' ? '28세 이상' : partner.ageBand + '세'}</p>}
+        {partner.intro && <p className="mb-3 text-sm whitespace-pre-wrap wrap-anywhere">{partner.intro}</p>}
+        {!!partner.tags?.length && <div className="mb-4 flex flex-wrap justify-center gap-2">{partner.tags.map(tag => <span key={tag} className={partner.commonTags?.includes(tag) ? 'rounded-full bg-[#1554ff] px-3 py-1 text-xs text-white' : 'rounded-full bg-[#edf3ff] px-3 py-1 text-xs text-[#63708a]'}>{partner.commonTags?.includes(tag) ? '♥ ' : ''}{tags.data?.find(item => item.code === tag)?.label ?? tag}</span>)}</div>}
+        {!!partner.commonTags?.length && <p className="mb-3 text-xs text-[#63708a]">♥ 같은 관심사</p>}
         <div className={"flex items-center justify-between gap-[10px] [padding:8px_8px_8px_14px] [border:1px_solid_#e1e8f7] rounded-[8px] text-left text-[14px] [&_>_span]:wrap-anywhere [&_>_span]:min-w-[0] [&_>_span]:select-all [&_button]:shrink-0 [&_button]:grid [&_button]:place-items-center [&_button]:w-[36px] [&_button]:h-[36px] [&_button]:cursor-pointer match-instagram"}><span>@{partner.instagram}</span><button type="button" onClick={() => void copyInstagram(partner.instagram)} aria-label={`${partner.instagram} 아이디 복사`}><img src={copyIcon} width="20" height="20" alt="" /></button></div>
         {isDemo ? <><button type="button" className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} disabled>인스타 프로필 바로가기 ↗</button><p className={"text-[10px] text-[#8a95a9] mt-[12px] match-demo-account"}>예시 계정으로, 실제 프로필 연결은 제공하지 않아요.</p></> : <a className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} href={`https://www.instagram.com/${encodeURIComponent(partner.instagram)}/`} target="_blank" rel="noopener noreferrer">인스타 프로필 바로가기 ↗</a>}
         {!isDemo && partner.matchId !== undefined && <MatchReportForm matchId={partner.matchId} nickname={partner.nickname} onReported={onReported} />}
@@ -77,6 +86,7 @@ function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; 
 export default function InstatingResult({ participation, isPreview, onClose, onChanged }: { participation?: InstatingParticipation; isPreview: boolean; onClose: () => void; onChanged: () => Promise<void> }) {
   const [demoStatus, setDemoStatus] = useState<'matched' | 'unmatched' | 'pending'>('matched')
   const isDemo = isPreview && participation?.isDemo === true
+  const [metadata, setMetadata] = useState<ResultView | null>(null)
   const [serverResult, setServerResult] = useState<MatchResult | null>(null)
   const [loading, setLoading] = useState(!isDemo && Boolean(participation?.roundSeq))
   const [error, setError] = useState('')
@@ -94,9 +104,10 @@ export default function InstatingResult({ participation, isPreview, onClose, onC
       try {
         const data = toMatchResult(await getMyMatchResults(roundSeq))
         if (data.roundSeq !== roundSeq) throw new Error('요청한 회차와 결과 회차가 달라요. 다시 조회해 주세요.')
-        if (active && id === request) setServerResult(data.result)
+        if (active && id === request) { setServerResult(data.result); setMetadata(data) }
       } catch (reason) {
         if (!active || id !== request) return
+        setMetadata(null)
         if (reason instanceof ApiError && reason.status === 409) setServerResult({ status: 'pending' })
         else { setServerResult(null); setError(reason instanceof Error ? reason.message : '결과를 불러오지 못했어요.') }
       } finally { if (active && id === request) setLoading(false) }
@@ -124,6 +135,7 @@ export default function InstatingResult({ participation, isPreview, onClose, onC
       {isDemo && <div className={"flex flex-wrap items-center justify-between gap-[8px] [padding:12px_20px] bg-[#eef2fb] [border-top:1px_solid_#e8edf7] text-[10px] text-[#738198] [&_>_div]:flex [&_>_div]:gap-[4px] [&_button]:[padding:6px_10px] [&_button]:rounded-[5px] [&_button]:cursor-pointer [&_[aria-pressed=true]]:text-[#1554ff] [&_[aria-pressed=true]]:bg-[#fff] [&_[aria-pressed=true]]:[box-shadow:0_2px_5px_#284a8410] [&_[aria-pressed=true]]:font-bold match-preview-controls"}><span>결과 화면 미리보기</span><div>{(['matched', 'unmatched', 'pending'] as const).map(status => <button key={status} type="button" aria-pressed={demoStatus === status} onClick={() => setDemoStatus(status)}>{status === 'matched' ? '성공' : status === 'unmatched' ? '실패' : '발표 대기'}</button>)}</div></div>}
       {notice && <p className="px-6 py-3 text-sm text-[#1554ff]" role="status">{notice}</p>}
       {!isDemo && loading ? <p role="status" className="px-6 py-20 text-center text-sm">매칭 결과를 불러오고 있어요…</p> : !isDemo && error ? <div className="px-6 py-16 text-center"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="mt-5 rounded-xl bg-[#1554ff] px-5 py-3 text-white" onClick={() => setReload(value => value + 1)}>다시 조회하기</button></div> : !isDemo && result.status === 'matched' && result.partners.length === 0 ? <p className="px-6 py-16 text-center text-sm">표시할 결과 카드가 없어요.</p> : participation ? <Reveal key={`${participation.id}-${demoStatus}`} result={result} isDemo={isDemo} onClose={onClose} onReported={reported} /> : <section className={"[padding:60px_24px] text-center [&_h1]:text-[22px] [&_h1]:font-bold [&_p]:mt-[14px] [&_p]:text-[13px] [&_p]:text-[#7c8ba5] match-missing"}><h1>신청 내역을 찾을 수 없어요</h1><p>마이페이지에서 참여 내역을 다시 확인해주세요.</p><button type="button" className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} onClick={onClose}>마이페이지로 돌아가기</button></section>}
+      {!isDemo && !loading && !error && metadata && <div className="px-6 pb-6"><MatchRejoin key={metadata.roundSeq} data={metadata} onChanged={async () => { setReload(value => value + 1); await onChanged() }} /></div>}
       {!isDemo && !loading && !error && result.status === 'pending' && <button type="button" className="mx-auto mb-6 block rounded-xl bg-[#edf3ff] px-5 py-3 text-sm text-[#1554ff]" onClick={() => setReload(value => value + 1)}>발표 여부 다시 확인하기</button>}
     </div>
   </AppLayout>

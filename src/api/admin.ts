@@ -1,3 +1,6 @@
+import type { Notice, NoticeInput } from './notices.ts'
+export type { Notice, NoticeInput } from './notices.ts'
+export { getNotices, getNotice } from './notices.ts'
 import { apiRequest } from './client.ts'
 import type { PlaceEvent, ServerPlaceCategory } from './places.ts'
 
@@ -18,8 +21,6 @@ export type AdminReport = {
   reason: 'PROFILE' | 'FAKE' | 'OTHER'; detail: string | null; createdAt: string
   reviewedAt: string | null; decision: ReportDecision | null; targetReportCount: number; targetBlocked: boolean
 }
-export type NoticeInput = { title: string; body: string; banner: boolean }
-export type Notice = NoticeInput & { id: number; createdAt: string }
 export type PlaceInput = {
   name: string; category: ServerPlaceCategory; latitude: number; longitude: number
   description: string; building: string; floor: string; sortOrder: number; active: boolean
@@ -47,8 +48,6 @@ export function getAdminReports(reviewed?: boolean, page = 0, size = 20) {
 export const reviewReport = (id: number, decision: ReportDecision) => write<AdminReport>(`/match/reports/${id}/review`, 'PATCH', { decision })
 
 // 관리자 목록 API가 없는 공지·장소는 공개 조회 API를 사용합니다.
-export const getNotices = () => apiRequest<Notice[]>('/api/v1/notices?size=50')
-export const getNotice = (id: number) => apiRequest<Notice>(`/api/v1/notices/${id}`)
 export const createNotice = (body: NoticeInput) => write<Notice>('/notices', 'POST', body)
 export const updateNotice = (id: number, body: NoticeInput) => write<Notice>(`/notices/${id}`, 'PATCH', body)
 export const deleteNotice = (id: number) => write<void>(`/notices/${id}`, 'DELETE')

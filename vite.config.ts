@@ -1,9 +1,13 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { apiOrigin } from './src/utils/apiConfig.ts'
+import { createApiProxy } from './dev/apiProxy.ts'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  return {
   plugins: [
     react(),
     tailwindcss(),
@@ -64,5 +68,9 @@ export default defineConfig({
   ],
   server: {
     open: true,
+    proxy: env.VITE_DEV_API_PROXY === 'false' ? undefined : {
+      '/api/v1': createApiProxy(apiOrigin(env)),
+    },
   },
+  }
 })
