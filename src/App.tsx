@@ -17,6 +17,7 @@ import { resolveFestivalStart } from './utils/festivalLaunch'
 import { markSplashSeen, shouldShowSplash } from './utils/splash'
 import { LOGIN_SUCCESS_PATH, logout } from './api/auth'
 import { useMatchState } from './hooks/useMatchState'
+import MapLoadBoundary from './components/MapLoadBoundary'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
@@ -188,7 +189,7 @@ const App = () => {
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
         {page === 'performance' && <PerformanceDetail performance={performanceDetails.find(item => encodeURIComponent(item.id) === performanceId)} onBack={closePage} onHome={goHome} />}
         {page === 'cheers' && <Cheers onBack={closePage} onHome={goHome} />}
-        {page === 'map' && <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense>}
+        {page === 'map' && <MapLoadBoundary onBack={closePage}><Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-[#63708a]" role="status">축제 지도를 불러오고 있어요…</div>}><FestivalMap onBack={closePage} /></Suspense></MapLoadBoundary>}
         {(page === 'lost' || page === 'lost-write' || page === 'lost-detail') && <LostFound isWriting={page === 'lost-write'} postId={page === 'lost-detail' ? lostPostId : null} onOpenPost={openLostPost} onBack={closePage} onHome={goHome} onWrite={openLostWrite} onBackToList={closeLostWrite} />}
         {requiresAuthentication && authStatus === 'unavailable' && !profileAccess.isPreview && <p className="mx-auto max-w-[480px] px-5 py-20 text-center text-sm text-[#63708a]">서버 연결을 확인한 후 다시 불러와 주세요.</p>}
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}

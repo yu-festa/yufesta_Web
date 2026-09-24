@@ -135,9 +135,17 @@ INSTA-TING 배너 제목만 Rubik One을 사용하며, 나머지 문구와 카�
 
 `.env.local`의 `VITE_KAKAO_MAP_KEY`에 카카오 JavaScript 키를 설정합니다.
 카카오디벨로퍼스에서 카카오맵 사용 설정을 ON으로 하고, 해당 키의 JavaScript SDK 도메인에
-`http://localhost:5173`, `http://127.0.0.1:5173`과 실제 배포 도메인을 등록하세요.
-배포 환경에도 같은 이름의 환경변수를 등록하고 다시 빌드해야 합니다. 로컬 키 파일은 Git에서 제외됩니다.
+`http://localhost:5173`, `http://127.0.0.1:5173`과 실제 배포 도메인인
+`https://yufesta.com`, `https://www.yufesta.com`을 등록하세요. 다른 로컬 포트를 사용한다면 해당 주소도 등록합니다.
+Vercel의 Settings > Environment Variables에 `VITE_KAKAO_MAP_KEY`를 등록하고 Production 환경에
+적용한 뒤 다시 배포해야 합니다. Preview 배포를 검사하려면 해당 환경과 도메인도 별도로 설정합니다.
+로컬에서는 환경변수 수정 후 개발 서버를 재시작합니다. 로컬 키 파일은 Git에서 제외됩니다.
 키·도메인·사용 설정은 [카카오맵 공식 안내](https://apis.map.kakao.com/web/guide/)를 참고하세요.
+
+배포 직전에 열어 둔 페이지가 이전 지도 JavaScript 파일을 요청하면 로딩 오류가 날 수 있습니다.
+이때 흰 화면 대신 새로고침·돌아가기 안내를 표시합니다. `vercel.json`은 실제 화면 경로만
+`index.html`로 연결하고, 없는 `/assets` 파일은 HTML로 대체하지 않습니다. 앱 HTML은 `no-cache`로
+재검증하며 PWA에서도 `/assets` 요청을 앱 화면으로 대체하지 않습니다.
 
 ### 현재 위치와 직선 거리
 
