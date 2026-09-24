@@ -14,18 +14,13 @@ import { resolveProfileAccess } from './utils/profile'
 import Landing from './pages/Landing'
 import { useFestivalOpening } from './hooks/useFestivalOpening'
 import { resolveFestivalStart } from './utils/festivalLaunch'
-import { getMe, LOGIN_SUCCESS_PATH, logout } from './api/auth'
+import { markSplashSeen, shouldShowSplash } from './utils/splash'
+import { LOGIN_SUCCESS_PATH, logout } from './api/auth'
 import { useMatchState } from './hooks/useMatchState'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
 const previewEnabled = import.meta.env.VITE_PROFILE_PREVIEW === 'true'
-const SPLASH_SEEN_KEY = 'yufesta:splash-seen'
-
-function shouldShowSplash() {
-  try { return sessionStorage.getItem(SPLASH_SEEN_KEY) !== 'true' }
-  catch { return true }
-}
 
 type Page = 'entry' | 'main' | 'timetable' | 'performance' | 'cheers' | 'map' | 'lost' | 'lost-write' | 'lost-detail' | 'login' | 'instating-apply' | 'profile' | 'instating-result'
 
@@ -72,27 +67,18 @@ const App = () => {
   const page = authenticatedLogin ? 'main' : requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus === 'anonymous' && profileAccess.page === 'login' ? 'login' : requestedPage
 
   useEffect(() => {
-    if (requestedPage !== 'entry' || festivalOpened || new URLSearchParams(window.location.search).has('error')) return
-    let active = true
-    // OAuth 서버가 루트로 복귀시켜도 실제 세션이 확인되면 축제 시작일과 무관하게 메인으로 보냅니다.
-    // 비로그인 및 연결 실패는 랜딩 화면을 유지하고 반복 조회나 오류 배너를 띄우지 않습니다.
-    void getMe().then(() => {
-      if (!active) return
-      window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
-      setPage('main')
-    }).catch(() => undefined)
-    return () => { active = false }
+    // 루트 진입은 로그인 여부가 아니라 축제 시작 시각으로만 결정합니다.
+    // 시작 시각이 지나면 뒤로 가기로 랜딩에 돌아오지 않도록 주소도 교체합니다.
+    if (requestedPage === 'entry' && festivalOpened) {
+      window.history.replaceState(window.history.state, '', `/main${window.location.search}`)
+    }
   }, [requestedPage, festivalOpened])
 
   useEffect(() => {
     if (authenticatedLogin) window.history.replaceState(window.history.state, '', LOGIN_SUCCESS_PATH)
   }, [authenticatedLogin])
 
-  useEffect(() => {
-    if (!showSplash) return
-    try { sessionStorage.setItem(SPLASH_SEEN_KEY, 'true') }
-    catch { /* 저장소를 사용할 수 없으면 현재 페이지에서만 Splash를 유지한다. */ }
-  }, [showSplash])
+  useEffect(() => { markSplashSeen() }, [])
 
   useEffect(() => {
     if (authStatus === 'anonymous' && requiresAuthentication && profileAccess.page === 'login') {
