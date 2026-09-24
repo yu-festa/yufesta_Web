@@ -12,7 +12,7 @@ export type InstatingApplication = {
 export type MatchResult =
   | { status: 'pending' }
   | { status: 'unmatched' }
-  | { status: 'matched'; partners: { nickname: string; instagram: string }[] }
+  | { status: 'matched'; partners: { matchId?: number; nickname: string; instagram: string }[] }
 
 export type SavedApplication = InstatingApplication & { id: string; submittedAt: string }
 export const APPLICATION_STORAGE_KEY = 'yufesta.instating.applications.v1'

@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import { ApiError, apiRequest } from '../src/api/client.ts'
+import { oauthLoginUrl } from '../src/api/auth.ts'
 
 const originalFetch = globalThis.fetch
 const originalDocument = globalThis.document
+
+test('카카오와 구글 로그인은 로그인 성공 후 메인 화면으로 복귀하도록 요청한다', () => {
+  for (const provider of ['kakao', 'google'] as const) {
+    const url = new URL(oauthLoginUrl(provider))
+    assert.equal(url.pathname, `/oauth2/authorization/${provider}`)
+    assert.equal(url.searchParams.get('redirect'), '/main')
+    assert.equal(url.hash, '')
+  }
+})
 
 afterEach(() => {
   globalThis.fetch = originalFetch

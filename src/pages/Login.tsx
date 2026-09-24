@@ -5,7 +5,7 @@ import SocialLoginButton from '../components/SocialLoginButton'
 import type { LoginProvider } from '../components/SocialLoginButton'
 import { oauthLoginUrl } from '../api/auth'
 
-export default function Login({ onBack, onHome, redirectPath = '/main#profile' }: { onBack: () => void; onHome: () => void; redirectPath?: string }) {
+export default function Login({ onBack, onHome }: { onBack: () => void; onHome: () => void }) {
   const [message, setMessage] = useState(() => {
     const error = new URLSearchParams(window.location.search).get('error')
     return error ? '로그인을 완료하지 못했어요. 다시 시도해 주세요.' : ''
@@ -13,7 +13,7 @@ export default function Login({ onBack, onHome, redirectPath = '/main#profile' }
 
   function continueWith(provider: LoginProvider) {
     setMessage(`${provider === 'google' ? 'Google' : 'Kakao'} 로그인 화면으로 이동하고 있어요.`)
-    window.location.assign(oauthLoginUrl(provider, redirectPath))
+    window.location.assign(oauthLoginUrl(provider))
   }
 
   return (
