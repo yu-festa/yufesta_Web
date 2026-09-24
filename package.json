@@ -11,10 +11,10 @@
     "test:push": "node --test tests/push-test.test.ts",
     "test:countdown": "node --test tests/countdown.test.ts",
     "test:launch": "node --test tests/festival-launch.test.ts tests/splash.test.ts",
-    "test:lost": "node --test tests/lost-found.test.ts",
+    "test:lost": "node --test tests/new-content-api.test.ts tests/lost-item-display.test.ts",
     "test:map": "node --test tests/location.test.ts tests/restrooms.test.ts",
     "test:admin": "node --test tests/admin.test.ts",
-    "test:api": "node --test tests/api-client.test.ts tests/api-adapters.test.ts tests/match-api.test.ts tests/profile.test.ts tests/public-content.test.ts tests/dev-api-proxy.test.ts"
+    "test:api": "node --test tests/api-client.test.ts tests/api-adapters.test.ts tests/match-api.test.ts tests/profile.test.ts tests/public-content.test.ts tests/dev-api-proxy.test.ts tests/timetable-layout.test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

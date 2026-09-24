@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import HomeLogo from '../components/HomeLogo'
 import { getCheers, createCheer } from '../api/cheers'
+import { createContentReport } from '../api/contentReports'
 import { usePublicResource } from '../hooks/usePublicResource'
 import ResourceStatus from '../components/ResourceStatus'
 import { formatContentTime } from '../utils/publicContent'
@@ -9,7 +10,7 @@ import { formatContentTime } from '../utils/publicContent'
 const PAGE_SIZE = 10
 const iconButtonClass = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]'
 
-export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome: () => void }) {
+export default function Cheers({ onBack, onHome, isAuthenticated, onLogin }: { onBack: () => void; onHome: () => void; isAuthenticated: boolean; onLogin: () => void }) {
   const resource = usePublicResource(getCheers)
   const cheers = resource.data ?? []
   const [saving, setSaving] = useState(false)
@@ -18,6 +19,9 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
   const lock = useRef(false)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [message, setMessage] = useState('')
+  const [reportId, setReportId] = useState<number | null>(null)
+  const [reportReason, setReportReason] = useState('')
+  const [reporting, setReporting] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -55,6 +59,15 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
       window.scrollTo(0, 0)
     } catch (reason) { setError(reason instanceof Error ? reason.message : '응원을 등록하지 못했어요.') }
     finally { lock.current = false; setSaving(false) }
+  }
+
+  async function submitReport(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (reportId === null || reporting) return
+    setReporting(true); setError(''); setNotice('')
+    try { await createContentReport('CHEER', reportId, reportReason); setReportId(null); setReportReason(''); setNotice('신고가 접수됐어요.') }
+    catch (reason) { setError(reason instanceof Error ? reason.message : '신고를 접수하지 못했어요.') }
+    finally { setReporting(false) }
   }
 
   const visibleCheers = cheers.slice(0, visibleCount)
@@ -117,6 +130,8 @@ export default function Cheers({ onBack, onHome }: { onBack: () => void; onHome:
                 <strong className="block truncate text-[14px] font-bold tracking-[-0.25px]">{cheer.displayName}</strong>
                 <p className="mt-1 whitespace-pre-wrap wrap-anywhere text-[13px] font-medium tracking-[-0.15px] text-[#333]">{cheer.content}</p>
                 <time className="mt-2 block text-xs text-[#8a93a6]" dateTime={cheer.createdAt}>{formatContentTime(cheer.createdAt)}</time>
+                {!cheer.mine && <button type="button" className="mt-2 text-xs text-[#8a93a6] underline" onClick={() => { if (!isAuthenticated) { onLogin(); return } setReportId(reportId === cheer.id ? null : cheer.id); setReportReason('') }}>신고</button>}
+                {reportId === cheer.id && <form className="mt-3 rounded-lg bg-[#f7f9ff] p-3" onSubmit={submitReport}><label className="block text-xs">신고 사유 (20자 이내)<input required maxLength={20} value={reportReason} onChange={event => setReportReason(event.target.value)} className="mt-2 min-h-10 w-full rounded-lg border px-3 text-sm" /></label><button className="mt-2 rounded-lg bg-[#1554ff] px-3 py-2 text-xs font-bold text-white disabled:opacity-50" disabled={reporting || !reportReason.trim()}>신고 접수</button></form>}
               </div>
             </li>
           ))}
