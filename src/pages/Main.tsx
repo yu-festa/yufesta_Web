@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { MouseEvent, PointerEvent } from 'react'
 import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import AnnouncementCountdown from '../components/AnnouncementCountdown'
@@ -45,6 +46,42 @@ export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimeta
   const [cheersPaused, setCheersPaused] = useState(false)
   const [cheersHovered, setCheersHovered] = useState(false)
   const [cheersFocused, setCheersFocused] = useState(false)
+  const lineupDrag = useRef<{ pointerId: number; startX: number; scrollLeft: number; dragging: boolean } | null>(null)
+  const ignoreLineupClick = useRef(false)
+  const startLineupDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return
+    lineupDrag.current = { pointerId: event.pointerId, startX: event.clientX, scrollLeft: event.currentTarget.scrollLeft, dragging: false }
+  }
+  const moveLineupDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = lineupDrag.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    const distance = event.clientX - drag.startX
+    if (!drag.dragging && Math.abs(distance) > 5) {
+      drag.dragging = true
+      event.currentTarget.setPointerCapture(event.pointerId)
+      event.currentTarget.style.scrollSnapType = 'none'
+    }
+    if (drag.dragging) {
+      event.preventDefault()
+      event.currentTarget.scrollLeft = drag.scrollLeft - distance
+    }
+  }
+  const endLineupDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = lineupDrag.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    if (drag.dragging) {
+      ignoreLineupClick.current = true
+      event.currentTarget.style.scrollSnapType = ''
+      window.setTimeout(() => { ignoreLineupClick.current = false }, 0)
+    }
+    lineupDrag.current = null
+  }
+  const handleLineupClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!ignoreLineupClick.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    ignoreLineupClick.current = false
+  }
   const tickerTiming = useMemo<KeyframeAnimationOptions>(() => ({ duration: Math.min(32000, Math.max(8000, cheers.length * 4000)), iterations: Infinity, easing: 'linear' }), [cheers.length])
   const tickerRef = useMotion<HTMLDivElement>(tickerFrames, tickerTiming, cheers.length, cheersPaused || cheersHovered || cheersFocused)
   return (
@@ -83,10 +120,10 @@ export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimeta
           <span role="heading" aria-level={2} id="timetable-title" className="block font-bold"><button className={sectionLinkClass} onClick={onOpenTimetable}><span className="font-bold text-[20px]">타임테이블 확인하기</span><Icon name="arrow" /></button></span>
           <ResourceStatus loading={clubsResource.loading} error={clubsResource.error} retry={clubsResource.refresh} />
           {!clubsResource.loading && !clubsResource.error && !clubsResource.data?.length && <p className="mt-3 rounded-xl bg-[#f6f8ff] p-4 text-sm text-[#63708a]">등록된 동아리 공연이 없어요. 타임테이블에서 전체 일정을 확인해 주세요.</p>}
-          <div className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 동아리 목록" tabIndex={0}>
+          <div onPointerDown={startLineupDrag} onPointerMove={moveLineupDrag} onPointerUp={endLineupDrag} onPointerCancel={endLineupDrag} onClickCapture={handleLineupClick} onDragStart={event => event.preventDefault()} className="mt-4 flex w-[calc(100%+var(--app-content-padding))] snap-x snap-proximity select-none cursor-grab items-start gap-8 overflow-x-auto overscroll-x-contain pr-(--app-content-padding) pb-1 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1554ff] [&::-webkit-scrollbar]:hidden @max-[320px]:gap-6" role="region" aria-label="공연 동아리 목록" tabIndex={0}>
             {(clubsResource.data ?? []).map(club => (
               <button type="button" className="min-w-0 flex-[0_0_clamp(144px,40cqw,176px)] snap-start text-left" key={club.id} onClick={() => onOpenPerformance(String(club.id))}>
-                {club.photoUrl ? <img src={club.photoUrl} width="132" height="176" alt="" loading="lazy" className="block aspect-3/4 w-full rounded-xl object-cover" /> : <span className="grid aspect-3/4 w-full place-items-center rounded-xl bg-linear-to-br from-[#123585] to-[#6e95fb] px-3 text-center text-xl font-bold text-white">{club.name}</span>}
+                {club.photoUrl ? <img src={club.photoUrl} width="132" height="176" alt="" loading="lazy" draggable={false} className="block aspect-3/4 w-full rounded-xl object-cover" /> : <span className="grid aspect-3/4 w-full place-items-center rounded-xl bg-linear-to-br from-[#123585] to-[#6e95fb] px-3 text-center text-xl font-bold text-white">{club.name}</span>}
                 <span role="heading" aria-level={3} className="mt-2 block text-[14px] leading-snug font-semibold tracking-[-0.35px]">{club.name}</span>
                 <span className="mt-1 block text-[12px] text-[#858585]">{club.performances[0] ? formatContentTime(club.performances[0].effectiveStartAt) : club.genre ?? '공연 예정'}</span>
               </button>
