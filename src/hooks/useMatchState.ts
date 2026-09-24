@@ -18,6 +18,16 @@ export function useMatchState(enabled = true) {
   const requestId = useRef(0)
   const cancelRefresh = useCallback(() => { requestId.current++ }, [])
 
+  const clearSession = useCallback(() => {
+    // 로그아웃 전에 시작한 조회가 뒤늦게 로그인 상태를 복원하지 않도록 무효화합니다.
+    requestId.current++
+    setAuthStatus('anonymous')
+    setProfile(null)
+    setSummary(current => current ? { ...current, my: null } : null)
+    setError('')
+    setRefreshing(false)
+  }, [])
+
   const refresh = useCallback(async () => {
     const id = ++requestId.current
     setRefreshing(true)
@@ -82,7 +92,7 @@ export function useMatchState(enabled = true) {
   }, [enabled, refresh, cancelRefresh])
 
   return {
-    authStatus, summary, profile, error, refreshing, refresh, receivedAt,
+    authStatus, summary, profile, error, refreshing, refresh, clearSession, receivedAt,
     canApply: !error && !refreshing && isMatchOpen(summary, receivedAt, now),
     alreadyApplied: Boolean(summary?.my?.applied || profile?.participations.some(item => item.roundSeq === summary?.currentRound.seq)),
   }
