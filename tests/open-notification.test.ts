@@ -42,12 +42,12 @@ describe('예약 오픈 알림', { concurrency: false }, () => {
     for (const [name, value] of Object.entries(originalEnv)) { if (value === undefined) delete process.env[name]; else process.env[name] = value }
   })
 
-  test('한국 시간 18:10 예약 정보와 공개키만 반환한다', async () => {
-    assert.equal(DEFAULT_OPEN_PUSH_AT, '2026-09-26T18:10:00+09:00')
+  test('한국 시간 18:30 예약 정보와 공개키만 반환한다', async () => {
+    assert.equal(DEFAULT_OPEN_PUSH_AT, '2026-09-26T18:30:00+09:00')
     const response = await schedule.fetch(new Request(`${origin}/api/open-notification`))
     assert.equal(response.status, 200)
     assert.equal(response.headers.get('cache-control'), 'no-store')
-    assert.deepEqual(await response.json(), { publicKey: keys.publicKey, sendAt: '2026-09-26T09:10:00.000Z', accepting: true, mode: 'test' })
+    assert.deepEqual(await response.json(), { publicKey: keys.publicKey, sendAt: '2026-09-26T09:30:00.000Z', accepting: true, mode: 'test' })
   })
 
   test('설정 누락은 신청 성공으로 표시하지 않는다', async () => {

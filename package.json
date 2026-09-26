@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:push": "node --test tests/push-test.test.ts tests/open-notification.test.ts",
+    "test:push": "node --test tests/push-test.test.ts tests/open-notification.test.ts tests/server-build.test.ts",
     "test:countdown": "node --test tests/countdown.test.ts",
     "test:launch": "node --test tests/festival-launch.test.ts tests/splash.test.ts",
     "test:lost": "node --test tests/new-content-api.test.ts tests/lost-item-display.test.ts tests/lost-interactions.test.ts",
