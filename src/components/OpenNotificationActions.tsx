@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 type Config = { publicKey: string; sendAt: string; accepting: boolean; mode: 'test' | 'opening' }
 const buttonClass = 'flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#b4d5ff]/30 bg-linear-to-r from-[#1554ff]/35 to-[#64c0ff]/25 px-5 text-[15px] font-bold text-white backdrop-blur-sm transition-colors hover:from-[#1554ff]/60 hover:to-[#64c0ff]/40 disabled:cursor-default disabled:opacity-60 motion-reduce:transition-none'
 const storageKey = (config: Config) => `yufesta.open-notification:${config.sendAt}`
-const displayTime = (date: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(date))
 function keyBytes(value: string) {
   const binary = atob(value.replace(/-/g, '+').replace(/_/g, '/'))
   return Uint8Array.from(binary, character => character.charCodeAt(0))
@@ -23,7 +22,6 @@ export default function OpenNotificationActions({ onBrowse }: { onBrowse: () => 
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [registered, setRegistered] = useState(false)
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [now, setNow] = useState(Date.now)
   const lock = useRef(false)
@@ -56,7 +54,7 @@ export default function OpenNotificationActions({ onBrowse }: { onBrowse: () => 
     if (!window.isSecureContext || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setError('이 브라우저에서는 알림을 사용할 수 없어요. 알림을 지원하는 브라우저에서 열어주세요.'); return
     }
-    lock.current = true; setBusy(true); setError(''); setMessage('')
+    lock.current = true; setBusy(true); setError('')
     try {
       // Request permission directly in the click gesture, before other asynchronous work.
       const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
@@ -73,7 +71,6 @@ export default function OpenNotificationActions({ onBrowse }: { onBrowse: () => 
       }))
       if (result?.accepted !== true) throw new Error('알림 예약을 확인하지 못했어요. 다시 시도해 주세요.')
       setRegistered(true)
-      setMessage(`${displayTime(result.sendAt)} 알림을 신청했어요. 사이트를 닫아도 받을 수 있어요.`)
       try { localStorage.setItem(storageKey(config), await fingerprint(subscription.endpoint)) } catch { /* Server registration is already complete. */ }
     } catch (cause) { setError(cause instanceof Error ? cause.message : '알림을 신청하지 못했어요. 다시 시도해 주세요.') }
     finally { lock.current = false; setBusy(false) }
@@ -87,8 +84,6 @@ export default function OpenNotificationActions({ onBrowse }: { onBrowse: () => 
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
       </button>
     </div>
-    {config && <p className="mt-3 text-xs leading-5 text-[#c1d5ed]">{displayTime(config.sendAt)} {config.mode === 'test' ? '테스트 알림' : '오픈 알림'} · 한국 시간</p>}
-    {message && <p role="status" className="mt-3 text-xs leading-5 text-[#d7ebff]">{message}</p>}
     {error && <p role="alert" className="mt-3 text-xs leading-5 text-[#ffd7df]">{error}{!config && <button type="button" className="ml-2 underline" onClick={() => window.location.reload()}>다시 불러오기</button>}</p>}
   </div>
 }

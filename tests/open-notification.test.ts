@@ -42,12 +42,14 @@ describe('예약 오픈 알림', { concurrency: false }, () => {
     for (const [name, value] of Object.entries(originalEnv)) { if (value === undefined) delete process.env[name]; else process.env[name] = value }
   })
 
-  test('한국 시간 18:30 예약 정보와 공개키만 반환한다', async () => {
-    assert.equal(DEFAULT_OPEN_PUSH_AT, '2026-09-26T18:30:00+09:00')
+  test('기본값은 10월 2일 오전 10시 한국 시간의 실제 오픈 알림이며 공개 정보만 반환한다', async () => {
+    delete process.env.PUSH_OPEN_AT
+    delete process.env.PUSH_OPEN_MODE
+    assert.equal(DEFAULT_OPEN_PUSH_AT, '2026-10-02T10:00:00+09:00')
     const response = await schedule.fetch(new Request(`${origin}/api/open-notification`))
     assert.equal(response.status, 200)
     assert.equal(response.headers.get('cache-control'), 'no-store')
-    assert.deepEqual(await response.json(), { publicKey: keys.publicKey, sendAt: '2026-09-26T09:30:00.000Z', accepting: true, mode: 'test' })
+    assert.deepEqual(await response.json(), { publicKey: keys.publicKey, sendAt: '2026-10-02T01:00:00.000Z', accepting: true, mode: 'opening' })
   })
 
   test('설정 누락은 신청 성공으로 표시하지 않는다', async () => {
@@ -119,6 +121,14 @@ describe('예약 오픈 알림', { concurrency: false }, () => {
     assert.equal(JSON.parse(String(payload)).type, 'FESTIVAL_OPEN')
     assert.match(JSON.parse(String(payload)).title, /테스트/)
     assert.equal(options?.vapidDetails?.privateKey, keys.privateKey)
+
+    process.env.PUSH_OPEN_MODE = 'opening'
+    const openingBody = JSON.stringify({ job: sealJob({ subscription, sendAt, mode: 'opening' }, keys.privateKey) })
+    assert.equal((await deliver.fetch(callbackRequest(openingBody))).status, 200)
+    const openingPayload = JSON.parse(String(sender.mock.calls[1].arguments[1]))
+    assert.equal(openingPayload.title, 'YU FESTA가 열렸어요!')
+    assert.equal(openingPayload.url, '/main')
+    assert.doesNotMatch(openingPayload.body, /테스트/)
   })
 
   test('다음 서명키도 검증하고 만료 구독·오래된 예약·변경된 예약을 재발송하지 않는다', async t => {

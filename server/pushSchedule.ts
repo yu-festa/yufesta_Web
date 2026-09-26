@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto'
 import type { PushSubscription } from 'web-push'
 
-export const DEFAULT_OPEN_PUSH_AT = '2026-09-26T18:30:00+09:00'
+export const DEFAULT_OPEN_PUSH_AT = '2026-10-02T10:00:00+09:00'
 export const json = (body: object, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } })
 
 export function isSubscription(value: unknown): value is PushSubscription {
@@ -29,7 +29,7 @@ export function scheduleConfig() {
   const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY
   const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY
   if (!publicKey || !privateKey || !token || !currentSigningKey || !nextSigningKey) throw new Error('Missing push configuration')
-  const mode = process.env.PUSH_OPEN_MODE || 'test'
+  const mode = process.env.PUSH_OPEN_MODE || 'opening'
   if (mode !== 'test' && mode !== 'opening') throw new Error('Invalid push mode')
   return { sendAt, publicKey, privateKey, token, currentSigningKey, nextSigningKey, origin: origin.origin, callback: `${origin.origin}/api/open-notification-deliver`, mode: mode as 'test' | 'opening' }
 }
