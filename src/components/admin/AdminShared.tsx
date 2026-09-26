@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 export function Feedback({ error, success }: { error?: string; success?: string }) {
@@ -21,12 +21,13 @@ export function ConfirmDialog({ confirmation, busy, onConfirm, onCancel }: {
   confirmation: Confirmation | null; busy: boolean; onConfirm: () => void; onCancel: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
   useEffect(() => {
     if (confirmation) ref.current?.showModal()
     else ref.current?.close()
   }, [confirmation])
-  return <dialog ref={ref} className="admin-dialog" aria-labelledby="admin-confirm-title" onCancel={event => { event.preventDefault(); if (!busy) onCancel() }}>
-    <h2 id="admin-confirm-title">{confirmation?.title}</h2>
+  return <dialog ref={ref} className="admin-dialog" aria-labelledby={titleId} onCancel={event => { event.preventDefault(); if (!busy) onCancel() }}>
+    <h2 id={titleId}>{confirmation?.title}</h2>
     <p>{confirmation?.description}</p>
     <div className="admin-actions"><button className="admin-button secondary" autoFocus disabled={busy} onClick={onCancel}>취소</button><button className="admin-button" disabled={busy} onClick={onConfirm}>{busy ? '처리 중…' : '확인하고 실행'}</button></div>
   </dialog>
