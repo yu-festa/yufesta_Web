@@ -1,7 +1,7 @@
 import { apiRequest } from './client.ts'
 import type { FestivalPlace, PlaceCategory } from '../data/festivalMap.ts'
 
-export type ServerPlaceCategory = 'STAGE' | 'BOOTH' | 'TOILET' | 'AMENITY' | 'INFO'
+export type ServerPlaceCategory = 'STAGE' | 'TOILET' | 'DELIVERY_ZONE'
 
 export type PlaceListItem = {
   id: number
@@ -35,11 +35,11 @@ export function getPlace(placeId: number) {
 }
 
 const categoryMap: Record<ServerPlaceCategory, PlaceCategory> = {
-  STAGE: 'stage', BOOTH: 'booth', TOILET: 'restroom', AMENITY: 'amenity', INFO: 'info',
+  STAGE: 'stage', TOILET: 'restroom', DELIVERY_ZONE: 'delivery',
 }
 
-const categoryLabels: Record<ServerPlaceCategory, string> = {
-  STAGE: '공연장', BOOTH: '부스', TOILET: '화장실', AMENITY: '편의시설', INFO: '안내시설',
+export const placeCategoryLabels: Record<ServerPlaceCategory, string> = {
+  STAGE: '공연장', TOILET: '화장실', DELIVERY_ZONE: '배달존',
 }
 
 export function toFestivalPlace(place: PlaceListItem): FestivalPlace {
@@ -49,7 +49,7 @@ export function toFestivalPlace(place: PlaceListItem): FestivalPlace {
     category: categoryMap[place.category],
     name: place.name,
     position: [Number(place.latitude), Number(place.longitude)],
-    status: categoryLabels[place.category],
+    status: placeCategoryLabels[place.category],
     description: '장소를 선택하면 상세 안내를 불러옵니다.',
   }
 }
@@ -59,6 +59,7 @@ export function withPlaceDetail(place: FestivalPlace, detail: PlaceDetail): Fest
     ...place,
     name: detail.name,
     category: categoryMap[detail.category],
+    status: placeCategoryLabels[detail.category],
     position: [Number(detail.latitude), Number(detail.longitude)],
     description: detail.description || '등록된 상세 설명이 없습니다.',
     building: detail.building,

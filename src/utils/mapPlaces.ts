@@ -23,3 +23,8 @@ export function getNearbyRestrooms(stage: FestivalPlace, radius = 500, source: F
 export function formatMapDistance(meters: number) {
   return meters >= 1000 ? `약 ${(meters / 1000).toFixed(1)}km` : `약 ${Math.round(meters / 10) * 10}m`
 }
+
+export function getPlacesByDistance(source: FestivalPlace[], position: Coordinates | null) {
+  const entries = source.map(place => ({ place, distance: position ? distanceInMeters(position, place.position) : null }))
+  return position ? entries.sort((a, b) => a.distance! - b.distance!) : entries
+}
