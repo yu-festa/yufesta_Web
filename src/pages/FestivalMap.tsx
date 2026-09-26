@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { festivalPlaces, getFilteredPlaces, mapCategories, mapSources } from '../data/festivalMap'
 import type { MapFilter } from '../data/festivalMap'
 import { useCurrentLocation } from '../hooks/useCurrentLocation'
@@ -6,7 +6,7 @@ import { useKakaoFestivalMap } from '../hooks/useKakaoFestivalMap'
 import RestroomGuide from '../components/RestroomGuide'
 import { getPlace, getPlaces, toFestivalPlace, withPlaceDetail } from '../api/places'
 import type { FestivalPlace } from '../data/festivalMap'
-import { distanceInMeters, formatMapDistance, getNearbyRestrooms } from '../utils/mapPlaces'
+import { distanceInMeters, formatMapDistance, getNearbyRestrooms, getPlacesByDistance } from '../utils/mapPlaces'
 
 const roundButton = 'grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white text-[#344054] shadow-[0_2px_12px_#24375224] disabled:cursor-wait disabled:opacity-60'
 
@@ -30,6 +30,9 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
   const [restroomGuide, setRestroomGuide] = useState<{ buildingId: string | null } | null>(null)
   const [allPlaces, setAllPlaces] = useState<FestivalPlace[]>(festivalPlaces)
   const [placeDetails, setPlaceDetails] = useState<Record<string, FestivalPlace>>({})
+  const [detailError, setDetailError] = useState<string | null>(null)
+  const [detailAttempt, setDetailAttempt] = useState(0)
+  const selectPlace = useCallback((id: string | null) => { setSelectedId(id); setDetailError(null) }, [])
   const [usingServerPlaces, setUsingServerPlaces] = useState(false)
   const [placeDataMessage, setPlaceDataMessage] = useState('장소 정보를 서버에서 확인하고 있어요…')
   const { location, requestLocation } = useCurrentLocation()
@@ -38,11 +41,12 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
   const places = useMemo(() => nearbyStage
     ? [nearbyStage, ...nearbyRestrooms.map(({ place }) => place)]
     : getFilteredPlaces(filter, allPlaces), [filter, nearbyStage, nearbyRestrooms, allPlaces])
+  const listedPlaces = useMemo(() => getPlacesByDistance(places, location.position ? [location.position.latitude, location.position.longitude] : null), [places, location.position])
   const selectedBase = places.find(place => place.id === selectedId)
   const selected = selectedBase ? placeDetails[selectedBase.id] ?? selectedBase : undefined
   const selectedDistance = nearbyRestrooms.find(({ place }) => place.id === selectedId)?.distance
   const currentDistance = selected && location.position ? distanceInMeters([location.position.latitude, location.position.longitude], selected.position) : null
-  const { ready, error, retry, zoom, resetCampus, centerNextLocation } = useKakaoFestivalMap(containerRef, places, selected, location.position, setSelectedId)
+  const { ready, error, retry, zoom, resetCampus, centerNextLocation } = useKakaoFestivalMap(containerRef, places, selected, location.position, selectPlace)
 
   useEffect(() => {
     let active = true
@@ -67,10 +71,10 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
     void getPlace(selectedBase.serverId).then(detail => {
       if (active) setPlaceDetails(current => ({ ...current, [selectedBase.id]: withPlaceDetail(selectedBase, detail) }))
     }).catch(() => {
-      if (active) setPlaceDetails(current => ({ ...current, [selectedBase.id]: { ...selectedBase, description: '상세 정보를 불러오지 못했어요. 잠시 후 다시 선택해 주세요.' } }))
+      if (active) setDetailError(selectedBase.id)
     })
     return () => { active = false }
-  }, [selectedBase, placeDetails])
+  }, [selectedBase, placeDetails, detailAttempt])
 
   function changeFilter(nextFilter: MapFilter) {
     setSelectedId(null)
@@ -93,7 +97,7 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
     if (!allPlaces.some(place => place.id === id)) return
     if (!nearbyRestrooms.some(({ place }) => place.id === id)) setNearbyStageId(null)
     setFilter('restroom')
-    setSelectedId(id)
+    selectPlace(id)
   }
 
   return (
@@ -141,7 +145,8 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
               <button className="absolute top-2 right-2 grid size-9 cursor-pointer place-items-center rounded-full text-[#7b8492]" aria-label="장소 설명 닫기" onClick={() => setSelectedId(null)}><ControlIcon name="close" /></button>
               <p className="pr-8 text-[11px] font-semibold text-[#1554ff]">{selected.status}</p>
               <h2 className="mt-1 pr-8 text-base font-bold">{selected.name}</h2>
-              <p className="mt-2 text-xs leading-relaxed text-[#667085]">{selected.description}</p>
+              {detailError === selected.id ? <p className="mt-2 text-xs text-red-700" role="alert">상세 정보를 불러오지 못했어요.<button className="ml-2 underline" onClick={() => { setDetailError(null); setDetailAttempt(value => value + 1) }}>다시 불러오기</button></p>
+                : <p className="mt-2 text-xs leading-relaxed text-[#667085]">{selected.serverId && !placeDetails[selected.id] ? '상세 안내를 불러오고 있어요…' : selected.description}</p>}
               {selected.category === 'restroom' && !selected.serverId ? <>
                 {selectedDistance !== undefined && <p className="mt-2 text-xs font-semibold text-[#1554ff]">{nearbyStage?.name}에서 직선 {formatMapDistance(selectedDistance)}</p>}
                 <button className="mt-3 min-h-11 w-full cursor-pointer rounded-xl bg-[#1554ff] px-3 text-sm font-semibold text-white" onClick={() => setRestroomGuide({ buildingId: selected.id })}>화장실 상세 위치 보기 <span aria-hidden="true">›</span></button>
@@ -150,7 +155,7 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
                 {selected.category === 'stage' && <button className="mt-3 min-h-11 w-full cursor-pointer rounded-xl bg-[#1554ff] px-3 text-sm font-semibold text-white" onClick={() => showNearbyRestrooms(selected.id)}>공연장 근처 화장실 보기 <span aria-hidden="true">›</span></button>}
                 {selected.source && <a className="mt-3 inline-block text-[11px] text-[#667085] underline underline-offset-2" href={mapSources[selected.source].url} target="_blank" rel="noopener noreferrer">{mapSources[selected.source].label} ↗</a>}
               </>}
-              {selected.serverId && <div className="mt-3 space-y-2 border-t border-[#edf0f3] pt-3 text-xs text-[#667085]">
+              {selected.serverId && placeDetails[selected.id] && <div className="mt-3 space-y-2 border-t border-[#edf0f3] pt-3 text-xs text-[#667085]">
                 {(selected.building || selected.floor) && <p><strong className="text-[#344054]">위치</strong> {[selected.building, selected.floor].filter(Boolean).join(' · ')}</p>}
                 {selected.events?.length ? <ul className="space-y-1.5">{selected.events.map(event => <li key={event.id}><strong className="text-[#344054]">{event.name}</strong>{event.timeText && ` · ${event.timeText}`}</li>)}</ul> : <p>현재 등록된 진행 이벤트가 없습니다.</p>}
               </div>}
@@ -173,19 +178,28 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
               <p className="mt-1 text-[11px] leading-relaxed text-[#667085]">{nearbyStage.name} 기준 · 반경 500m<br />건물까지 직선 거리순 · 당일 개방 여부 미확인</p>
               {nearbyRestrooms.length ? <ul className="mt-2 divide-y divide-[#edf0f3]">
                 {nearbyRestrooms.map(({ place, distance }) => <li key={place.id}>
-                  <button className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left" onClick={() => setSelectedId(place.id)}>
+                  <button className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left" onClick={() => selectPlace(place.id)}>
                     <span className="min-w-0"><span className="block text-xs font-semibold">{place.name}</span><span className="mt-0.5 block text-[10px] text-[#8b95a5]">{place.status}</span></span>
                     <span className="shrink-0 text-xs font-semibold text-[#1554ff]">{formatMapDistance(distance)} <span aria-hidden="true">›</span></span>
                   </button>
                 </li>)}
               </ul> : <p className="mt-3 text-xs text-[#667085]">반경 500m 안에서 확인된 화장실 건물이 없어요.</p>}
-            </> : filter === 'delivery' ? <>
-              <h2 className="text-sm font-bold">배달존 위치를 확인 중이에요</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#667085]">작년 배달존의 공식 위치 자료가 확인되지 않았어요. 위치가 확인되면 지도에 표시할 예정이에요.</p>
+            </> : filter === 'delivery' && !places.length ? <>
+              <h2 className="text-sm font-bold">등록된 배달존이 없어요</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-[#667085]">배달존 위치가 등록되면 지도에서 확인할 수 있어요.</p>
             </> : <>
               <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold">{filter === 'all' ? '축제 주변 장소' : mapCategories.find(category => category.id === filter)?.label ?? '장소'} <span className="ml-1 text-[#1554ff]">{places.length}</span></h2><span className="text-[11px] text-[#8b95a5]">핀을 눌러 확인하세요</span></div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-[#667085]">{usingServerPlaces ? '서버에 등록된 장소를 카테고리별로 확인할 수 있어요. 핀을 선택하면 상세 설명과 진행 이벤트를 불러옵니다.' : filter === 'restroom' ? '층별 위치와 남녀 구분을 확인해 보세요. 공개 자료에서 확인한 일부 시설이며, 당일 개방 여부는 미확인이에요.' : <>2025년 5월 공연장 · 교내 상설 화장실<br />올해 배치와 다를 수 있어요. 배달존은 위치 확인 중이에요.</>}</p>
               {(filter === 'all' || filter === 'restroom') && !usingServerPlaces && <button className="mt-3 flex min-h-10 w-full cursor-pointer items-center justify-between rounded-xl bg-[#f0f5ff] px-3 text-xs font-semibold text-[#1554ff]" onClick={() => setRestroomGuide({ buildingId: null })}>화장실 건물·층별 목록 <span aria-hidden="true">›</span></button>}
+              {usingServerPlaces && <>
+                <p className="mt-2 text-[10px] text-[#8b95a5]">{location.position ? '현재 위치에서 가까운 순 · 직선 거리' : '장소를 선택해 상세 안내를 확인하세요'}</p>
+                <ul className="mt-2 divide-y divide-[#edf0f3]">{listedPlaces.map(({ place, distance }) => <li key={place.id}>
+                  <button className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left" onClick={() => selectPlace(place.id)}>
+                    <span className="min-w-0"><span className="block text-xs font-semibold">{place.name}</span><span className="mt-0.5 block text-[10px] text-[#8b95a5]">{place.status}</span></span>
+                    <span className="shrink-0 text-xs font-semibold text-[#1554ff]">{distance !== null && formatMapDistance(distance)} <span aria-hidden="true">›</span></span>
+                  </button>
+                </li>)}</ul>
+              </>}
             </>}
             <p className="mt-3 border-t border-[#edf0f3] pt-2 text-[10px] leading-relaxed text-[#8b95a5]">{placeDataMessage}</p>
           </section>
@@ -195,11 +209,13 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
       <dialog ref={dialogRef} className="fixed inset-0 m-auto max-h-[80dvh] w-[min(420px,calc(100%-40px))] overflow-y-auto rounded-2xl border-0 bg-white p-5 text-[#222] shadow-xl backdrop:bg-[#11182766]" aria-labelledby="map-info-title" onClick={event => { if (event.target === event.currentTarget) dialogRef.current?.close() }}>
         <div className="flex items-center justify-between gap-3"><h2 id="map-info-title" className="text-lg font-bold">지도 정보</h2><button className="grid size-10 cursor-pointer place-items-center" onClick={() => dialogRef.current?.close()} aria-label="지도 정보 닫기"><ControlIcon name="close" /></button></div>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-[#667085]">
+          {usingServerPlaces ? <p>축제 운영진이 등록한 공연장·화장실·배달존을 표시해요. 지도 핀이나 장소 목록을 선택하면 위치와 행사 안내를 확인할 수 있어요.</p> : <>
           <p>공연장은 <strong className="font-semibold text-[#344054]">2025년 5월 26~28일 천마대동제</strong> 자료를 참고했어요. 2025년 가을축제 배치도는 확인되지 않아 반영하지 않았어요.</p>
           <p>화장실은 교내 상설 시설이에요. 핀은 건물 대표 위치예요. 상세 안내에서 도면으로 확인한 실내 위치와 층만 확인된 시설을 구분해 보여드려요. 공개 자료에 없는 층·호실은 추정하지 않았으며, 모든 화장실을 포함하지는 않아요. 축제 당일·야간 개방 여부는 미확인이에요.</p>
           <p>배달존은 작년 공식 위치를 확인하지 못해 표시하지 않았어요. 올해 축제의 배치·운영 여부는 추후 공지를 확인해 주세요.</p>
+          </>}
           <p>현재 위치 버튼을 누르면 위치 권한을 요청해요. 파란 원은 위치 오차 범위예요. 선택한 장소까지 직선 거리를 기기에서 계산해 표시하며, 실제 보행 거리와는 달라요. 사이트는 위치를 저장하거나 별도 경로 서버로 전송하지 않아요.</p>
-          <ul className="space-y-2 border-t border-[#edf0f3] pt-3 text-xs">{Object.values(mapSources).map(source => <li key={source.url}><a className="text-[#1554ff] underline underline-offset-2" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} ↗</a></li>)}</ul>
+          {!usingServerPlaces && <ul className="space-y-2 border-t border-[#edf0f3] pt-3 text-xs">{Object.values(mapSources).map(source => <li key={source.url}><a className="text-[#1554ff] underline underline-offset-2" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} ↗</a></li>)}</ul>}
         </div>
       </dialog>
       {restroomGuide && <RestroomGuide initialBuildingId={restroomGuide.buildingId} onClose={() => setRestroomGuide(null)} onShowOnMap={showRestroomOnMap} />}

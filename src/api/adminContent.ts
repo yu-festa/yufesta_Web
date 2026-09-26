@@ -2,6 +2,7 @@ import { apiRequest } from './client.ts'
 import type { ContentReportTarget } from './contentReports.ts'
 import type { LostItem } from './lostItems.ts'
 import type { SlotType } from './timetable.ts'
+import { validateClubPhoto } from '../utils/clubPhoto.ts'
 
 const root = '/api/v1/admin'
 const write = <T>(path: string, method: string, body?: unknown) => apiRequest<T>(`${root}${path}`, {
@@ -33,17 +34,29 @@ export type AdminClub = {
   signatureSong: string | null; instagramUrl: string | null; photoUrl: string | null
   sortOrder: number; createdById: number | null
 }
-export type ClubInput = Omit<AdminClub, 'id' | 'createdById'>
+export type ClubInput = Omit<AdminClub, 'id' | 'createdById' | 'photoUrl'>
 export const getAdminClubs = () => apiRequest<AdminClub[]>(`${root}/clubs`)
 export const createAdminClub = (body: ClubInput) => write<AdminClub>('/clubs', 'POST', body)
 export const updateAdminClub = (id: number, body: ClubInput) => write<AdminClub>(`/clubs/${id}`, 'PATCH', body)
 export const deleteAdminClub = (id: number) => write<void>(`/clubs/${id}`, 'DELETE')
+export function uploadAdminClubPhoto(id: number, file: File) {
+  validateClubPhoto(file)
+  const body = new FormData()
+  body.append('file', file)
+  // 업로드 성공 응답 형태에 의존하지 않고 화면에서 목록을 다시 조회합니다.
+  return apiRequest<void>(`${root}/clubs/${id}/photo`, { method: 'POST', body })
+}
+export const deleteAdminClubPhoto = (id: number) => write<void>(`/clubs/${id}/photo`, 'DELETE')
 
 export type OfficialLostItemInput = { description: string; placeText: string; occurredAt: string | null }
 export const createOfficialLostItem = (body: OfficialLostItemInput) => write<LostItem>('/lost-items', 'POST', body)
 export const setLostItemVisibility = (id: number, hidden: boolean) => write<LostItem>(`/lost-items/${id}/visibility`, 'PATCH', { hidden })
 export const resolveAdminLostItem = (id: number) => write<LostItem>(`/lost-items/${id}/resolve`, 'PATCH')
-export const setCheerVisibility = (id: number, hidden: boolean) => write<void>(`/cheers/${id}/visibility`, 'PATCH', { hidden })
+export type AdminCheer = {
+  id: number; content: string; displayName: string; moderationStatus: 'PASSED' | 'SKIPPED'
+  reportCount: number; hidden: boolean; createdAt: string
+}
+export const setCheerVisibility = (id: number, hidden: boolean) => write<AdminCheer>(`/cheers/${id}/visibility`, 'PATCH', { hidden })
 
 export type AdminContentReport = {
   id: number; targetType: ContentReportTarget; targetId: number; reporterUserId: number | null

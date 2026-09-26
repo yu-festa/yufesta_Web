@@ -1,16 +1,13 @@
 import { restroomBuildings, restroomDetailLevel, restroomSources } from './restrooms.ts'
 
-export type PlaceCategory = 'stage' | 'booth' | 'restroom' | 'amenity' | 'info' | 'delivery'
+export type PlaceCategory = 'stage' | 'restroom' | 'delivery'
 export type MapFilter = 'all' | PlaceCategory
 export type Coordinates = [latitude: number, longitude: number]
 
 export const mapCategories = [
   { id: 'all', label: '전체', icon: '' },
   { id: 'stage', label: '공연장', icon: '🎤' },
-  { id: 'booth', label: '부스', icon: '🎪' },
   { id: 'restroom', label: '화장실', icon: '🚻' },
-  { id: 'amenity', label: '편의', icon: '🏪' },
-  { id: 'info', label: '안내', icon: 'ℹ️' },
   { id: 'delivery', label: '배달존', icon: '🛵' },
 ] as const
 

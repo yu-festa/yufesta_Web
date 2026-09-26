@@ -2,11 +2,11 @@ import { useAdminAction, useAdminResource } from '../../hooks/useAdminData'
 import { useRef, useState } from 'react'
 import { createPlace, createPlaceEvent, updatePlace, updatePlaceEvent } from '../../api/admin'
 import type { AdminPlace, EventInput, PlaceInput } from '../../api/admin'
-import { getPlace, getPlaces } from '../../api/places'
+import { getPlace, getPlaces, placeCategoryLabels } from '../../api/places'
 import type { PlaceDetail, PlaceEvent, ServerPlaceCategory } from '../../api/places'
 import { Feedback, Field, ResourceState, SectionHeading } from '../../components/admin/AdminShared'
 
-const categories: Record<ServerPlaceCategory, string> = { STAGE: '공연장', BOOTH: '부스', TOILET: '화장실', AMENITY: '편의시설', INFO: '안내시설' }
+const categories = placeCategoryLabels
 const loadPlaces = () => getPlaces()
 type Selection = { detail: PlaceDetail; admin?: AdminPlace }
 export default function AdminPlaces() {
