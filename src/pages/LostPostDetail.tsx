@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import AppLayout from '../layout/AppLayout'
 import LostFoundIcon from '../components/LostFoundIcon'
+import LostPostImage from '../components/LostPostImage'
+import LostComments from '../components/LostComments'
 import { createContentReport } from '../api/contentReports'
 import { deleteLostItem, getLostItems, resolveLostItem } from '../api/lostItems'
 import type { LostItem } from '../api/lostItems'
@@ -45,6 +47,7 @@ export default function LostPostDetail({ postId, post, onBack, onHome, onChanged
             <h2 id="lost-detail-title" className="mt-6 text-[22px] leading-snug font-bold tracking-[-0.6px] text-[#202939]">{detail.title}</h2>
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f5f8ff] px-3.5 py-3 text-xs leading-5"><LostFoundIcon name="pin" className="mt-0.5 size-4 shrink-0 text-[#1554ff]" /><span className="shrink-0 font-semibold text-[#1554ff]">{item.kind === 'LOST' ? '분실 장소' : '발견 장소'}</span><span className="text-[#5b6b85]">{item.placeText}</span></div>
             {detail.body && <p className="mt-5 whitespace-pre-wrap text-[15px] leading-[1.85] text-[#364152]">{detail.body}</p>}
+            <LostPostImage postId={item.id} image={item.image ?? null} isAuthenticated={isAuthenticated} onChanged={image => { resource.replaceData(current => (current ?? [item]).map(post => post.id === item.id ? { ...post, image } : post)); onChanged() }} />
             {item.occurredAt && <p className="mt-5 text-xs text-[#78869d]">{item.kind === 'LOST' ? '분실 시각' : '발견 시각'} · {formatContentTime(item.occurredAt)}</p>}
             {(resolved || item.status === 'RESOLVED') && <p className="mt-6 inline-flex rounded-lg bg-[#edf3ff] px-3 py-2 text-xs font-semibold text-[#1554ff]">해결된 글이에요</p>}
             <div className="mt-8 flex flex-wrap gap-2 border-t border-[#edf0f5] pt-6">
@@ -53,6 +56,7 @@ export default function LostPostDetail({ postId, post, onBack, onHome, onChanged
             {isAuthenticated && <p className="mt-2 text-[11px] text-[#929bad]">해결 처리와 삭제는 본인이 작성한 글에만 적용돼요.</p>}
             {reportOpen && <form className="mt-4 rounded-xl bg-[#f7f9ff] p-4" onSubmit={event => { event.preventDefault(); void act(() => createContentReport('LOST_ITEM', item.id, reason), '신고가 접수됐어요.', () => { setReportOpen(false); setReason('') }) }}><label className="block text-sm">신고 사유 (20자 이내)<input required maxLength={20} value={reason} onChange={event => setReason(event.target.value)} className="mt-2 block min-h-11 w-full rounded-lg border border-[#dbe4f5] px-3" /></label><button disabled={busy || !reason.trim()} className="mt-3 rounded-lg bg-[#1554ff] px-4 py-2 text-sm font-bold text-white disabled:opacity-50">신고 접수</button></form>}
             {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}{notice && <p role="status" className="mt-4 text-sm text-[#1554ff]">{notice}</p>}
+            <LostComments key={`${item.id}:${isAuthenticated}`} postId={item.id} isAuthenticated={isAuthenticated} onLogin={onLogin} />
           </article>}
   </AppLayout>
 }

@@ -1,6 +1,6 @@
 import { apiRequest } from './client.ts'
 
-export type ContentReportTarget = 'CHEER' | 'LOST_ITEM'
+export type ContentReportTarget = 'CHEER' | 'LOST_ITEM' | 'LOST_ITEM_COMMENT'
 export type ContentReport = { id: number; targetType: ContentReportTarget; targetId: number; reason: string; createdAt: string }
 
 export function createContentReport(targetType: ContentReportTarget, targetId: number, reason: string) {

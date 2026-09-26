@@ -1,6 +1,6 @@
 # 공개 API 연결 내역
 
-기준: 2026-09-26 운영 서버의 public OpenAPI 문서(/v3/api-docs/public). 총 27개 작업을 화면 또는 공통 요청 처리에 연결했습니다. Swagger의 public은 문서 그룹 이름이며, 모든 API가 비로그인용이라는 뜻은 아닙니다. 전체 API 대조 결과는 [최신 점검 문서](./api-audit-2026-09-26.md)에 기록했습니다.
+기준: 2026-09-26 운영 서버의 public OpenAPI 문서(/v3/api-docs/public). 총 33개 작업을 화면 또는 공통 요청 처리에 연결했습니다. Swagger의 public은 문서 그룹 이름이며, 모든 API가 비로그인용이라는 뜻은 아닙니다. 전체 API 대조 결과는 [최신 점검 문서](./api-audit-2026-09-26.md)에 기록했습니다.
 
 ## API별 연결 위치
 
@@ -21,7 +21,7 @@
 | POST /api/v1/match/reports | 상대 카드에서 사유·상세를 입력하여 신고. 성공 후 해당 카드 제거 | 필요 |
 | GET /api/v1/cheers | 메인의 움직이는 응원 목록과 응원 페이지 | 불필요 |
 | POST /api/v1/cheers | 응원 페이지 하단 입력창. 실제 등록 결과로 목록 갱신 | 불필요, CSRF 필요 |
-| POST /api/v1/content-reports | 응원·일반 분실물 글 신고 | 필요, CSRF 필요 |
+| POST /api/v1/content-reports | 응원·일반 분실물 글·분실물 댓글/답글 신고 | 필요, CSRF 필요 |
 | GET /api/v1/notices | 메인 공지 배너·종 아이콘의 공지 목록 | 불필요 |
 | GET /api/v1/notices/{noticeId} | 배너 또는 목록 선택 시 공지 상세 | 불필요 |
 | GET /api/v1/places | 축제 지도에 공개 장소 표시. 전체 조회 후 화면에서 카테고리 필터 | 불필요 |
@@ -33,6 +33,12 @@
 | POST /api/v1/lost-items | 분실·습득 글 등록 | 필요, CSRF 필요 |
 | PATCH /api/v1/lost-items/{id}/resolve | 본인 글 해결 처리 | 필요, CSRF 필요 |
 | DELETE /api/v1/lost-items/{id} | 본인 글 삭제 | 필요, CSRF 필요 |
+| POST /api/v1/lost-items/{lostItemId}/images | 글 작성·상세에서 사진 한 장 업로드 | 필요, CSRF 필요 |
+| DELETE /api/v1/lost-items/{lostItemId}/images/{imageId} | 상세에서 본인 글 사진 삭제 | 필요, CSRF 필요 |
+| GET /api/v1/lost-items/{lostItemId}/comments | 상세 댓글·답글 목록 | 불필요 |
+| POST /api/v1/lost-items/{lostItemId}/comments | 댓글 등록, 최대 200자 | 필요, CSRF 필요 |
+| POST /api/v1/lost-items/{lostItemId}/comments/{commentId}/replies | 최상위 댓글에 답글 등록, 최대 200자 | 필요, CSRF 필요 |
+| DELETE /api/v1/lost-items/{lostItemId}/comments/{commentId} | 본인 댓글·답글 삭제 | 필요, CSRF 필요 |
 
 ## 이번에 추가·수정한 내용
 
@@ -67,8 +73,9 @@
 ### 타임테이블·동아리·분실물
 
 - 타임테이블과 이미지 저장은 실제 `/timetable` 응답을 사용하며 변경 시간, 지연, LIVE 상태를 반영합니다. 메인 공연 목록과 상세는 `/clubs`, `/clubs/{id}`를 사용합니다.
-- 분실물 목록·등록·해결·삭제는 서버 저장 API로 전환했습니다. 신고는 `/content-reports`로 전송합니다. 사진과 댓글은 서버 API가 없어 UI에서 숨겼습니다.
-- 분실물 상세 조회 API가 없어 최근 50건 목록에 있는 글만 상세에서 열 수 있습니다. 소유자 여부를 응답에서 알 수 없으므로 해결·삭제는 서버가 본인 글 여부를 최종 검사합니다.
+- 분실물 목록·등록·해결·삭제와 사진 업로드/삭제, 댓글·답글 조회/작성/삭제를 연결했습니다. JPEG·PNG, 10MB 이하 한 장을 허용하며 사진 실패 시 글을 중복 등록하지 않고 사진만 재시도합니다. 목록 썸네일과 상세 원본 사진을 표시합니다.
+- 댓글의 `mine`·`postAuthor`·`deleted`로 삭제 버튼·작성자 표시·삭제 안내를 구분합니다. 댓글은 최대 200자이며 답글에 다시 답글을 작성하는 UI는 제공하지 않습니다. 글·댓글·답글 신고는 `/content-reports`로 전송합니다. 자세한 흐름은 [분실물 문서](./lost-found.md)에 기록했습니다.
+- 분실물 상세 조회 API가 없어 최근 50건 목록에 있는 글만 상세에서 열 수 있습니다. 글 소유자 여부를 응답에서 알 수 없으므로 사진 관리·해결·삭제는 서버가 본인 글 여부를 최종 검사합니다.
 
 ### 공지
 
@@ -102,7 +109,7 @@
 
 - npm run test:api: 인증·CSRF, 신청/수정/취소/재참여, 실제 결과 계약, 입력 제한, 응원·공지 응답 및 오류, 시각 변환, 개발 프록시, 타임테이블 배치, 배달존·거리 정렬을 포함한 31개 검사.
 - npm run test:admin: 기존 관리자 API와 사진 업로드·삭제·파일 검사·실패 처리를 포함한 11개 검사.
-- npm run test:lost: 신규 일정·동아리·분실물·콘텐츠 신고의 공개 계약 및 제목·내용 표시 검사 4개.
+- npm run test:lost: 일정·동아리·분실물·콘텐츠 신고의 공개 계약 및 제목·내용 표시, 사진·댓글·답글·운영자 댓글 공개 상태·입력 제한·오류 전파 검사 10개.
 - npm run test:launch: 랜딩 전환·최초 스플래시 7개 검사.
 - npm run build, npm run lint.
 - 개발 프록시를 통한 운영 CSRF 발급의 204 응답과 쿠키 Domain 제거를 확인했습니다. 운영과 같은 쿠키 속성을 사용하는 모의 서버에서 브라우저의 비로그인 응원 등록을 검증했으며, CSRF 누락 요청은 거절되는 것도 검사했습니다.

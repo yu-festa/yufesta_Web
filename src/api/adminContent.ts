@@ -1,6 +1,6 @@
 import { apiRequest } from './client.ts'
 import type { ContentReportTarget } from './contentReports.ts'
-import type { LostItem } from './lostItems.ts'
+import type { LostItem, LostItemComment } from './lostItems.ts'
 import type { SlotType } from './timetable.ts'
 import { validateClubPhoto } from '../utils/clubPhoto.ts'
 
@@ -52,6 +52,7 @@ export type OfficialLostItemInput = { description: string; placeText: string; oc
 export const createOfficialLostItem = (body: OfficialLostItemInput) => write<LostItem>('/lost-items', 'POST', body)
 export const setLostItemVisibility = (id: number, hidden: boolean) => write<LostItem>(`/lost-items/${id}/visibility`, 'PATCH', { hidden })
 export const resolveAdminLostItem = (id: number) => write<LostItem>(`/lost-items/${id}/resolve`, 'PATCH')
+export const setLostItemCommentVisibility = (lostItemId: number, commentId: number, hidden: boolean) => write<LostItemComment>(`/lost-items/${lostItemId}/comments/${commentId}/visibility`, 'PATCH', { hidden })
 export type AdminCheer = {
   id: number; content: string; displayName: string; moderationStatus: 'PASSED' | 'SKIPPED'
   reportCount: number; hidden: boolean; createdAt: string

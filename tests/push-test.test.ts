@@ -154,3 +154,49 @@ test('알림 클릭 시 기존 앱 창으로 이동한다', async () => {
   await completed
   assert.ok(closed && focused)
 })
+
+test('오픈 푸시는 중복 태그와 메인 이동 정보를 가진 알림을 표시한다', async () => {
+  const handlers = new Map<string, (event: unknown) => void>()
+  let shown: { title: string; options: { tag: string; icon: string; data: { url: string } } } | undefined
+  const messages: unknown[] = []
+  const self = {
+    addEventListener: (name: string, callback: (event: unknown) => void) => handlers.set(name, callback),
+    registration: { showNotification: async (title: string, options: NonNullable<typeof shown>['options']) => { shown = { title, options } } },
+    clients: { matchAll: async () => [{ postMessage: (message: unknown) => messages.push(message) }] },
+  }
+  runInNewContext(await readFile(new URL('../public/push-sw.js', import.meta.url), 'utf8'), { self, URL })
+  let completed: Promise<void> | undefined
+  handlers.get('push')!({
+    data: { json: () => ({ type: 'FESTIVAL_OPEN', title: 'YU FESTA가 열렸어요!', body: '지금 축제를 만나보세요.', url: 'https://another.example' }) },
+    waitUntil: (promise: Promise<void>) => { completed = promise },
+  })
+  await completed
+  assert.equal(shown?.options.tag, 'yu-festa-festival-open')
+  assert.equal(shown?.options.icon, '/pwa-yufesta-v2-192x192.png')
+  assert.equal(shown?.options.data.url, '/main')
+  assert.deepEqual(JSON.parse(JSON.stringify(messages)), [{ type: 'FESTIVAL_OPEN_RECEIVED' }])
+})
+
+test('오픈 알림 클릭 시 랜딩 창을 메인으로 이동하고 없으면 새 창을 연다', async () => {
+  for (const hasWindow of [true, false]) {
+    const handlers = new Map<string, (event: unknown) => void>()
+    let destination = ''
+    let focused = false
+    const self = {
+      addEventListener: (name: string, callback: (event: unknown) => void) => handlers.set(name, callback),
+      clients: {
+        matchAll: async () => hasWindow ? [{ url: `${origin}/`, navigate: async (url: string) => { destination = url; return { focus: async () => { focused = true } } } }] : [],
+        openWindow: async (url: string) => { destination = url },
+      },
+    }
+    runInNewContext(await readFile(new URL('../public/push-sw.js', import.meta.url), 'utf8'), { self, URL })
+    let completed: Promise<void> | undefined
+    handlers.get('notificationclick')!({
+      notification: { close: () => {}, data: { url: '/main' } },
+      waitUntil: (promise: Promise<void>) => { completed = promise },
+    })
+    await completed
+    assert.equal(destination, '/main')
+    assert.equal(focused, hasWindow)
+  }
+})
