@@ -3,6 +3,7 @@ import AppLayout from '../layout/AppLayout'
 import { useMotion } from '../hooks/useMotion'
 import { getFestivalCountdown } from '../utils/festivalLaunch'
 import CountdownDigits from '../components/CountdownDigits'
+import OpenNotificationActions from '../components/OpenNotificationActions'
 import mainLogo from '../assets/mainlogo.svg'
 import heroBackground from '../assets/Landing/starfield-blue.png'
 import instatingArtwork from '../assets/Main/InstatingBackground.webp'
@@ -88,7 +89,7 @@ export default function Landing({ target }: { target: number }) {
         <h2 id="landing-countdown-title" className="text-[16px] leading-7 font-medium tracking-[.3px] text-[#d8eaff] [text-shadow:0_2px_12px_#03132980]">축제까지 남은 시간</h2>
         <LandingCountdown target={target} />
         <p className="text-[13px] leading-6 text-[#c1d5ed] [text-shadow:0_1px_8px_#031329]"><time dateTime="2026-10-02T00:00:00+09:00" className="font-semibold text-[#d7ebff]">10월 2일 0시</time>에 메인 화면이 열려요.</p>
-        <button type="button" onClick={() => goTo('landing-services')} className="mx-auto mt-7 flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#b4d5ff]/30 bg-linear-to-r from-[#1554ff]/35 to-[#64c0ff]/25 px-7 text-[15px] font-bold text-white backdrop-blur-sm transition-colors hover:from-[#1554ff]/60 hover:to-[#64c0ff]/40 motion-reduce:transition-none">서비스 둘러보기<Arrow className="size-4 rotate-90" /></button>
+        <OpenNotificationActions onBrowse={() => goTo('landing-services')} />
       </section>
       </section>
 
