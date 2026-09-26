@@ -127,10 +127,12 @@ export default function Cheers({ onBack, onHome, isAuthenticated, onLogin }: { o
             <li className="grid min-h-18 grid-cols-[40px_minmax(0,1fr)] items-center gap-2 border-b border-[#e6e6e6] py-2" key={cheer.id}>
               <span className="grid size-9 place-items-center rounded-full bg-[#dfe8ff] text-[14px] font-semibold text-[#89a5e9]" aria-hidden="true">{cheer.displayName.slice(0, 1)}</span>
               <div className="min-w-0">
-                <strong className="block truncate text-[14px] font-bold tracking-[-0.25px]">{cheer.displayName}</strong>
+                <div className="flex items-center gap-2">
+                  <strong className="min-w-0 truncate text-[14px] font-bold tracking-[-0.25px]">{cheer.displayName}</strong>
+                  {!cheer.mine && <button type="button" className="shrink-0 text-xs text-[#8a93a6] underline" onClick={() => { if (!isAuthenticated) { onLogin(); return } setReportId(reportId === cheer.id ? null : cheer.id); setReportReason('') }}>신고</button>}
+                </div>
                 <p className="mt-1 whitespace-pre-wrap wrap-anywhere text-[13px] font-medium tracking-[-0.15px] text-[#333]">{cheer.content}</p>
                 <time className="mt-2 block text-xs text-[#8a93a6]" dateTime={cheer.createdAt}>{formatContentTime(cheer.createdAt)}</time>
-                {!cheer.mine && <button type="button" className="mt-2 text-xs text-[#8a93a6] underline" onClick={() => { if (!isAuthenticated) { onLogin(); return } setReportId(reportId === cheer.id ? null : cheer.id); setReportReason('') }}>신고</button>}
                 {reportId === cheer.id && <form className="mt-3 rounded-lg bg-[#f7f9ff] p-3" onSubmit={submitReport}><label className="block text-xs">신고 사유 (20자 이내)<input required maxLength={20} value={reportReason} onChange={event => setReportReason(event.target.value)} className="mt-2 min-h-10 w-full rounded-lg border px-3 text-sm" /></label><button className="mt-2 rounded-lg bg-[#1554ff] px-3 py-2 text-xs font-bold text-white disabled:opacity-50" disabled={reporting || !reportReason.trim()}>신고 접수</button></form>}
               </div>
             </li>
