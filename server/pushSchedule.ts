@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'node:crypto'
 import type { PushSubscription } from 'web-push'
 
-export const DEFAULT_OPEN_PUSH_AT = '2026-09-26T18:10:00+09:00'
+export const DEFAULT_OPEN_PUSH_AT = '2026-09-26T18:30:00+09:00'
 export const json = (body: object, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } })
 
 export function isSubscription(value: unknown): value is PushSubscription {
