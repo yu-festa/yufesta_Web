@@ -22,14 +22,17 @@ afterEach(() => {
 
 test('공통 API 클라이언트가 쿠키를 포함하고 성공 응답의 data를 반환한다', async () => {
   let credentials: RequestCredentials | undefined
-  globalThis.fetch = (async (_input, init) => {
+  const user = { role: 'USER', displayName: '홍길동', profileImageUrl: 'https://example.com/social-profile.jpg' }
+  globalThis.fetch = (async (input, init) => {
+    assert.ok(String(input).endsWith('/api/v1/auth/me'))
+    assert.equal(init?.method, 'GET')
     credentials = init?.credentials
-    return new Response(JSON.stringify({ status: 200, message: 'ok', data: { role: 'USER' } }), {
+    return new Response(JSON.stringify({ status: 200, message: 'ok', data: user }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     })
   }) as typeof fetch
 
-  assert.deepEqual(await getMe(), { role: 'USER' })
+  assert.deepEqual(await getMe(), user)
   assert.equal(credentials, 'include')
 })
 

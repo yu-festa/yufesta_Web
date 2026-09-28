@@ -5,7 +5,7 @@ import type { MatchSummary, MatchTagOption } from '../src/api/match.ts'
 import { ApiError } from '../src/api/client.ts'
 import { applicationToForm, isMatchOpen, parseMatchTime, toMatchApplicationUpdate, toMatchApplicationRequest } from '../src/utils/match.ts'
 import { toMatchResult } from '../src/utils/matchResult.ts'
-import { profileFromApplication } from '../src/utils/profile.ts'
+import { profileFromSession } from '../src/utils/profile.ts'
 
 const originalFetch = globalThis.fetch
 const originalDocument = globalThis.document
@@ -138,7 +138,7 @@ test('신청 PATCH는 동의 필드 없이 전송하고 갱신된 신청을 반�
 })
 
 test('현재 신청이 없어도 최근 발표 회차를 프로필에서 열 수 있다', () => {
-  const profile = profileFromApplication(null, summary)
+  const profile = profileFromSession({ role: 'USER', displayName: '홍길동', profileImageUrl: null }, null, summary)
   assert.equal(profile.participations[0].roundSeq, 1)
   assert.equal(profile.participations[0].published, true)
   assert.equal(profile.participations[0].resultOnly, true)
