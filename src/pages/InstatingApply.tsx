@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import InstatingHeader from '../components/InstatingHeader'
+import NoticeNotificationActions from '../components/NoticeNotificationActions'
 import { ApiError } from '../api/client'
 import { applicationToForm, toMatchApplicationUpdate, toMatchApplicationRequest, parseMatchTime } from '../utils/match'
 import type { InstatingApplication as Application } from '../utils/instating'
@@ -105,6 +106,7 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
         <span ref={heartRef} className={"grid place-items-center w-[96px] h-[96px] rounded-full [margin:0_auto_22px] bg-[#eef4ff] text-[#1554ff] text-[70px] instating-success-mark"} aria-hidden="true">♡</span>
         <h1 className="text-2xl font-bold">이미 신청을 완료했어요</h1>
         <p>이번 회차의 신청을 완료했어요.<br />마이페이지에서 신청 내역과 결과를 확인해주세요.</p>
+        <NoticeNotificationActions />
         <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} onClick={onProfile}>신청 내역 확인하기</button>
         <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer text-[#758198] mt-[8px] instating-secondary"} onClick={onHome}>홈으로 돌아가기</button>
       </section>
@@ -197,6 +199,7 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
           <p>축제를 함께 즐길 새로운 친구,<br />두근두근, 조금만 기다려주세요.</p>
           <div className={"mt-[28px] [padding:26px_22px] text-left [border:1px_solid_#dfe8fb] rounded-[12px] [background:linear-gradient(140deg,#f1f6ff,#fff)] [&_>_span]:text-[9px] [&_>_span]:tracking-[1.5px] [&_>_span]:text-[#8795ac] [&_h3]:mt-[18px] [&_h3]:text-[19px] [&_h3]:font-bold [&_h3]:wrap-anywhere [&_>_p]:text-[#8390a5] [&_>_p]:text-[12px] [&_>_p]:leading-[1.8] [&_>_p]:mt-[8px] [&_>_div]:flex [&_>_div]:justify-between [&_>_div]:gap-[12px] [&_>_div]:mt-[24px] [&_>_div]:pt-[20px] [&_>_div]:[border-top:1px_dashed_#ccd9ee] [&_>_div]:text-[13px] [&_strong]:text-[#1554ff] instating-completion-ticket"}><span>2026 YU FESTA · INSTA-TING</span><h3>{application.nickname}님의 신청서</h3><p>@{application.instagram}</p><div><span>매칭 결과 발표</span><strong>{publishAt && Number.isFinite(parseMatchTime(publishAt)) ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parseMatchTime(publishAt)) : '발표 예정'}</strong></div><p>발표 후 마이페이지에서 카드를 두드려<br />나의 매칭 결과를 확인해보세요.</p></div>
           <p className={"mt-[14px] text-[11px] text-center text-[#8390a5] leading-[1.6] instating-local-note"}>{editing ? '수정한 정보가 저장되었습니다.' : '서버에 신청이 접수되었습니다.'}</p>
+          <NoticeNotificationActions />
           <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer mt-[28px] bg-[#1554ff] text-[white] [&:hover]:bg-[#1046db] [&:active]:[transform:scale(.99)] instating-primary"} onClick={onProfile}>마이페이지에서 확인하기</button>
           <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer text-[#758198] mt-[8px] instating-secondary"} onClick={onHome}>홈으로 돌아가기</button>
         </section>}
