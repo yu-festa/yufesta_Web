@@ -14,6 +14,8 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
   const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
   const logoutLock = useRef(false)
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null)
+  const profileImageUrl = user.profileImageUrl && user.profileImageUrl !== failedImageUrl ? user.profileImageUrl : null
 
   const [action, setAction] = useState<'cancel' | null>(null)
   const [busy, setBusy] = useState(false)
@@ -58,8 +60,8 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
         </div>
 
         <section className={"flex items-center gap-[20px] mt-[28px] [padding:28px_20px] rounded-[22px] [background:radial-gradient(ellipse_at_90%_0%,_#e9e5ff,_transparent_70%),_linear-gradient(120deg,_#eff5ff,_#f8faff)] [border:1px_solid_#edf1ff] profile-user"} aria-label="프로필 정보">
-          <div className={"relative grid place-items-center w-[76px] h-[76px] shrink-0 [border:3px_solid_#fff] rounded-full text-[#6790ff] bg-[#dfe9ff] [box-shadow:0_6px_16px_#1554ff12] [&_>_span]:absolute [&_>_span]:right-[-3px] [&_>_span]:top-[-7px] [&_>_span]:text-[#8e8bdf] [&_>_span]:text-[22px] profile-avatar"} role="img" aria-label={`${user.name}님의 기본 프로필 이미지`}>
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="17" r="8" fill="currentColor" /><path d="M9 41a15 15 0 0 1 30 0" fill="currentColor" /></svg>
+          <div className={"relative grid place-items-center w-[76px] h-[76px] shrink-0 [border:3px_solid_#fff] rounded-full text-[#6790ff] bg-[#dfe9ff] [box-shadow:0_6px_16px_#1554ff12] [&_>_span]:absolute [&_>_span]:right-[-3px] [&_>_span]:top-[-7px] [&_>_span]:text-[#8e8bdf] [&_>_span]:text-[22px] profile-avatar"} role="img" aria-label={`${user.name}님의 ${profileImageUrl ? '프로필 사진' : '기본 프로필 이미지'}`}>
+            {profileImageUrl ? <img key={profileImageUrl} src={profileImageUrl} alt="" className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" onError={() => setFailedImageUrl(profileImageUrl)} /> : <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="17" r="8" fill="currentColor" /><path d="M9 41a15 15 0 0 1 30 0" fill="currentColor" /></svg>}
             <span aria-hidden="true">✦</span>
           </div>
           <div className={"min-w-[0] [&_h2]:text-[24px] [&_h2]:font-bold [&_h2]:tracking-[-.8px] [&_h2]:mt-[2px] [&_h2]:wrap-anywhere [&_h2_>_span]:text-[17px] [&_h2_>_span]:font-medium [&_h2_>_span]:ml-[3px] [&_p]:text-[12px] [&_p]:text-[#73829b] [&_p]:mt-[5px] [&_p]:wrap-anywhere profile-user-info"}><span className={"text-[#75849e] text-[12px] profile-greeting"}>반가워요!</span><h2>{user.name}<span>님</span></h2>{user.instagram && <p>@{user.instagram}</p>}</div>

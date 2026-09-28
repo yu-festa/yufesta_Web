@@ -1,6 +1,7 @@
 import { readApplications } from './instating.ts'
 import type { MatchResult, SavedApplication } from './instating.ts'
 import type { MatchApplication, MatchSummary, MatchTag } from '../api/match.ts'
+import type { AuthMe } from '../api/auth.ts'
 
 export type InstatingParticipation = {
   id: string
@@ -19,6 +20,7 @@ export type InstatingParticipation = {
 export type ProfileUser = {
   id: string
   name: string
+  profileImageUrl?: string | null
   instagram: string
   participations: InstatingParticipation[]
 }
@@ -37,21 +39,16 @@ const previewUser: ProfileUser = {
   }],
 }
 
-// Replace this adapter with the authenticated session when the login API is connected.
-// Preview data must never be used as an authentication credential.
-export function getCurrentProfileUser(): ProfileUser | null {
-  return null
-}
-
 const tagLabels: Record<MatchTag, string> = {
   ALCOHOL: '술', PERFORMANCE: '공연', SPORTS: '운동', GAME: '게임', CAFE: '카페',
   MOVIE: '영화', MUSIC: '음악', PHOTO: '사진', PET: '반려동물', ETC: '기타',
 }
 
-export function profileFromApplication(application: MatchApplication | null, summary?: MatchSummary | null): ProfileUser {
+export function profileFromSession(auth: AuthMe, application: MatchApplication | null, summary?: MatchSummary | null): ProfileUser {
   const profile: ProfileUser = application ? {
     id: 'authenticated-user',
-    name: application.nickname,
+    name: auth.displayName?.trim() || 'YU FESTA',
+    profileImageUrl: auth.profileImageUrl?.trim() || null,
     instagram: application.instagramId,
     participations: [{
       id: String(application.id),
@@ -65,7 +62,7 @@ export function profileFromApplication(application: MatchApplication | null, sum
       // 카드의 상대 정보는 결과 화면에서 따로 조회합니다.
       result: { status: 'pending' },
     }],
-  } : { id: 'authenticated-user', name: 'YU FESTA', instagram: '', participations: [] }
+  } : { id: 'authenticated-user', name: auth.displayName?.trim() || 'YU FESTA', profileImageUrl: auth.profileImageUrl?.trim() || null, instagram: '', participations: [] }
   const lastResult = summary?.my?.lastResult
   if (lastResult && !profile.participations.some(item => item.roundSeq === lastResult.roundSeq)) {
     profile.participations.push({

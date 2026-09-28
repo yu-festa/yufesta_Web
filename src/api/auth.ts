@@ -2,7 +2,11 @@ import { API_BASE_URL, apiRequest } from './client.ts'
 
 export type LoginProvider = 'google' | 'kakao'
 export type UserRole = 'USER' | 'STAFF' | 'OWNER'
-export type AuthMe = { role: UserRole }
+export type AuthMe = {
+  role: UserRole
+  displayName: string | null
+  profileImageUrl: string | null
+}
 export const LOGIN_SUCCESS_PATH = '/main'
 
 export function getMe() {

@@ -5,7 +5,7 @@ import { isAdminRole } from '../utils/admin'
 import { ApiError } from '../api/client'
 import { getMatchSummary, getMyApplication } from '../api/match'
 import type { MatchSummary, MatchApplication } from '../api/match'
-import { profileFromApplication } from '../utils/profile'
+import { profileFromSession } from '../utils/profile'
 import type { ProfileUser } from '../utils/profile'
 import { isMatchOpen } from '../utils/match'
 
@@ -50,6 +50,17 @@ export function useMatchState(enabled = true, authOnly = false) {
       setRefreshing(false)
       return
     }
+    if (authenticated) {
+      // 소셜 프로필은 신청 내역 조회가 늦거나 실패해도 갱신합니다.
+      setProfile(current => ({
+        ...profileFromSession(auth.value, null),
+        instagram: current?.instagram ?? '',
+        participations: current?.participations ?? [],
+      }))
+    } else {
+      setProfile(null)
+      setApplication(null)
+    }
     const [snapshot] = await Promise.allSettled([getMatchSummary().then(data => ({ data, receivedAt: Date.now() }))])
     if (id !== requestId.current) return
     let message = ''
@@ -61,7 +72,6 @@ export function useMatchState(enabled = true, authOnly = false) {
       message = snapshot.reason instanceof Error ? snapshot.reason.message : '인스타팅 정보를 불러오지 못했어요.'
     }
     if (authenticated) {
-      setProfile(current => current ?? profileFromApplication(null))
       try {
         const application = await getMyApplication().catch(reason => {
           if (reason instanceof ApiError && reason.status === 404) return null
@@ -69,7 +79,7 @@ export function useMatchState(enabled = true, authOnly = false) {
         })
         if (id !== requestId.current) return
         setApplication(application)
-        setProfile(profileFromApplication(application, snapshot.status === 'fulfilled' ? snapshot.value.data : null))
+        setProfile(profileFromSession(auth.value, application, snapshot.status === 'fulfilled' ? snapshot.value.data : null))
       } catch (reason) {
         if (id !== requestId.current) return
         if (reason instanceof ApiError && reason.status === 401) {
