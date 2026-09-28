@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import ts from 'typescript'
 
-test('배포용 JavaScript로 변환된 알림 API 두 개가 서버 모듈을 불러온다', () => {
+test('배포용 JavaScript로 변환된 오픈·공지 알림 API가 서버 모듈을 불러온다', () => {
   const root = fileURLToPath(new URL('../', import.meta.url))
   const configPath = ts.findConfigFile(join(root, 'api'), ts.sys.fileExists)
   assert.ok(configPath)
@@ -24,7 +24,7 @@ test('배포용 JavaScript로 변환된 알림 API 두 개가 서버 모듈을 �
   try {
     writeFileSync(join(output, 'package.json'), JSON.stringify({ type: 'module' }))
     const program = ts.createProgram({
-      rootNames: ['api/open-notification.ts', 'api/open-notification-deliver.ts'].map(name => join(root, name)),
+      rootNames: ['api/open-notification.ts', 'api/open-notification-deliver.ts', 'api/notice-notification.ts', 'api/notice-notification-poll.ts'].map(name => join(root, name)),
       options: { ...options, rootDir: root, outDir: output, skipLibCheck: true, types: ['node'], noEmitOnError: true },
     })
     const emitted = program.emit()
@@ -36,10 +36,15 @@ test('배포용 JavaScript로 변환된 알림 API 두 개가 서버 모듈을 �
       import assert from 'node:assert/strict';
       import schedule from './api/open-notification.js';
       import deliver from './api/open-notification-deliver.js';
+      import notice from './api/notice-notification.js';
+      import poll from './api/notice-notification-poll.js';
       delete process.env.QSTASH_TOKEN;
+      delete process.env.NOTICE_PUSH_ENABLED;
       const response = await schedule.fetch(new Request('https://example.com/api/open-notification'));
       assert.equal(response.status, 503);
       assert.equal(typeof deliver.fetch, 'function');
+      assert.equal((await notice.fetch(new Request('https://example.com/api/notice-notification'))).status, 503);
+      assert.equal(typeof poll.fetch, 'function');
     `], { cwd: output, encoding: 'utf8', timeout: 15000 })
     assert.equal(check.status, 0, check.stderr || check.error?.message)
   } finally {

@@ -26,7 +26,6 @@ function NoticeDetail({ id }: { id: number }) {
 function NoticeList({ onOpen }: { onOpen: (id: number) => void }) {
   const notices = usePublicResource(getNotices)
   return <>
-    <p className="mt-5 text-sm text-[#7d89a1]">축제 소식을 확인해 보세요. 최근 공지 최대 50개를 보여드려요.</p>
     <ResourceStatus loading={notices.loading} error={notices.error} retry={notices.refresh} />
     {!notices.loading && !notices.error && notices.data?.length === 0 && <p className="my-8 rounded-2xl bg-[#f7f9ff] p-8 text-center text-sm text-[#63708a]">아직 등록된 공지가 없어요.</p>}
     <ul className="mt-5 space-y-3">{notices.data?.map(notice => <li key={notice.id}><button type="button" onClick={() => onOpen(notice.id)} className="w-full rounded-2xl border border-[#e3e9f5] p-5 text-left hover:bg-[#f7f9ff] focus-visible:outline-2 focus-visible:outline-[#1554ff]">

@@ -3,6 +3,7 @@ import AppLayout from '../layout/AppLayout'
 import HomeLogo from '../components/HomeLogo'
 import MatchRejoin from '../components/MatchRejoin'
 import ResourceStatus from '../components/ResourceStatus'
+import NoticeNotificationActions from '../components/NoticeNotificationActions'
 import { usePublicResource } from '../hooks/usePublicResource'
 import { toMatchResult } from '../utils/matchResult'
 import type { ProfileUser } from '../utils/profile'
@@ -91,6 +92,7 @@ export default function Profile({ user, isPreview, onBack, onHome, onResult, onA
         </div>}
         <button type="button" className={"w-full min-h-[48px] mt-[12px] [border:1px_solid_#dfe6f6] rounded-[12px] text-[#66758e] text-[13px] font-semibold cursor-pointer [&:hover]:bg-[#f6f8ff] profile-home"} onClick={onHome}>홈으로 돌아가기</button>
         {onLogout && <button type="button" className={"w-full min-h-[48px] mt-[10px] text-[#8992a4] text-[12px] cursor-pointer disabled:cursor-wait disabled:opacity-60 profile-logout"} onClick={() => void signOut()} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>}
+        {!isPreview && <NoticeNotificationActions />}
         {logoutError && <p className="mt-2 text-center text-xs text-red-700" role="alert">{logoutError}</p>}
       </div>
     </AppLayout>
