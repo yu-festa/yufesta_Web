@@ -14,7 +14,7 @@ async function updateSubscription(action: 'status' | 'subscribe' | 'unsubscribe'
   }))
 }
 
-export default function NoticeNotificationActions() {
+export default function NoticeNotificationActions({ compact = false }: { compact?: boolean }) {
   const [config, setConfig] = useState<Config | null>(null)
   const [registered, setRegistered] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -80,6 +80,17 @@ export default function NoticeNotificationActions() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : '알림 설정을 변경하지 못했어요.') }
     finally { lock.current = false; setBusy(false) }
   }
+
+  if (compact) return <section className="px-4 py-3.5 text-left" aria-label="공지 알림 설정">
+    <div className="flex items-center justify-between gap-4">
+      <div><h3 className="text-sm font-semibold text-[#171717]">공지 알림</h3><p className="mt-1 text-[11px] leading-relaxed text-[#808080]">결과 발표와 축제 공지를 알려드려요</p></div>
+      <button type="button" role="switch" aria-checked={registered} aria-label="공지 알림" aria-describedby="profile-notice-status" onClick={() => void toggle()} disabled={loading || busy || !config} className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center disabled:cursor-default disabled:opacity-40">
+        <span className={`relative h-6 w-11 rounded-full transition-colors ${registered ? 'bg-[#1554ff]' : 'bg-[#d6dbe5]'}`} aria-hidden="true"><span className={`absolute top-[3px] size-[18px] rounded-full bg-white shadow-sm transition-transform ${registered ? 'translate-x-[23px]' : 'translate-x-[3px]'} left-0`} /></span>
+      </button>
+    </div>
+    <p id="profile-notice-status" role="status" className={loading || busy || message ? 'mt-1 text-[11px] text-[#1554ff]' : 'sr-only'}>{loading ? '알림 설정 확인 중…' : busy ? '설정 저장 중…' : message || (registered ? '공지 알림 켜짐' : '공지 알림 꺼짐')}</p>
+    {error && <p role="alert" className="mt-2 text-xs leading-5 text-red-700">{error}<button type="button" disabled={busy || loading} className="ml-2 underline" onClick={() => { setLoading(true); setError(''); setConfig(null); setRegistered(false); setReload(value => value + 1) }}>설정 다시 확인</button></p>}
+  </section>
 
   return <section className="mt-6 rounded-xl border border-[#dfe8fb] bg-[#f6f9ff] p-5 text-left" aria-label="공지 알림 설정">
     <h3 className="text-sm font-bold text-[#172039]">새 공지를 놓치지 마세요</h3>

@@ -123,7 +123,7 @@ export function useMatchState(enabled = true, authOnly = false) {
   }, [enabled, refresh, cancelRefresh])
 
   return {
-    authStatus, role, summary, profile, application, error, refreshing, refresh, clearSession, receivedAt,
+    authStatus, role, summary, profile, application, error, refreshing, refresh, clearSession, receivedAt, now,
     canApply: !error && !refreshing && isMatchOpen(summary, receivedAt, now),
     alreadyApplied: Boolean(summary?.my?.applied || profile?.participations.some(item => item.roundSeq === summary?.currentRound.seq)),
   }
