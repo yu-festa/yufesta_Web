@@ -49,10 +49,10 @@ export default function ProfileMatchCard({ card, now, canManage, busy, onEdit, o
     {published ? <button type="button" className={`${profileButton} mt-3 ${highlighted ? 'bg-white text-[#1554ff]' : 'border border-[#d5dfff] text-[#1554ff]'}`} onClick={onResult}>{participation.isDemo ? '결과 카드 체험하기' : status === 'unmatched' ? `${participation.round} 결과 화면 보기` : highlighted ? '결과 보러 가기' : '결과 다시 보기'}{highlighted && <ProfileChevron />}</button> : <>
       {round && <ProfileSchedule round={round} now={now} applied />}
       {application?.needsSlotReselect && <p className="mt-3 rounded-lg bg-[#eff3ff] px-3 py-2 text-xs leading-relaxed text-[#1554ff]">이전 공연을 현재 회차에서 사용할 수 없어요. 신청 정보를 수정해 공연을 다시 선택해 주세요.</p>}
-      <button type="button" disabled={!canManage || busy} className={`${profileButton} mt-3 border border-[#d5dfff] text-[#1554ff]`} onClick={onEdit}>신청 정보 수정하기</button>
+      {canManage && <button type="button" disabled={busy} className={`${profileButton} mt-3 border border-[#d5dfff] text-[#1554ff]`} onClick={onEdit}>신청 정보 수정하기</button>}
       {round && !canManage && !busy && (round.status === 'CLOSED' || closeTimeRemaining(round.closeAt, now) === '접수 마감') && <p className="mt-2 text-[11px] text-[#808080]">접수가 마감되어 수정·취소할 수 없어요.</p>}
     </>}
     {application && <ApplicationDetails application={application} highlighted={highlighted} />}
-    {!published && application && <button type="button" disabled={!canManage || busy} className="mx-auto mt-2 block min-h-9 cursor-pointer px-3 text-xs text-[#fa6581] underline underline-offset-2 disabled:cursor-default disabled:opacity-40" onClick={onCancel}>신청 취소하기</button>}
+    {!published && application && canManage && <button type="button" disabled={busy} className="mx-auto mt-2 block min-h-9 cursor-pointer px-3 text-xs text-[#fa6581] underline underline-offset-2 disabled:cursor-default disabled:opacity-40" onClick={onCancel}>신청 취소하기</button>}
   </article>
 }
