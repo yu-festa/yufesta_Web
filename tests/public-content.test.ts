@@ -42,7 +42,13 @@ test('빈 글과 40자를 넘는 응원은 보내지 않고 서버 거절을 성
   assert.throws(() => createCheer('  '), /40자/)
   assert.throws(() => createCheer('가'.repeat(41)), /40자/)
   assert.equal(calls, 0)
-  await assert.rejects(() => createCheer('가'.repeat(40)), (error: unknown) => error instanceof ApiError && error.status === 429)
+  await assert.rejects(() => createCheer('가'.repeat(40)), (error: unknown) => error instanceof ApiError && error.status === 429 && error.code === 'RATE_LIMITED' && error.message === '60초 후에 다시 입력해주세요')
+})
+
+test('응원 전송 간격 제한 이외의 서버 오류는 원래 안내를 유지한다', async () => {
+  Object.defineProperty(globalThis, 'document', { value: { cookie: 'XSRF-TOKEN=token' }, configurable: true, writable: true })
+  globalThis.fetch = (async () => Response.json({ message: '응원 내용에 사용할 수 없는 단어가 있어요.', code: 'INVALID_INPUT_VALUE' }, { status: 400 })) as typeof fetch
+  await assert.rejects(() => createCheer('축제 파이팅!'), (error: unknown) => error instanceof ApiError && error.status === 400 && error.message === '응원 내용에 사용할 수 없는 단어가 있어요.')
 })
 
 test('공지 최신 목록과 상세를 따로 조회하고 삭제된 공지의 404를 유지한다', async () => {

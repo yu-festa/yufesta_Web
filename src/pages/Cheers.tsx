@@ -90,7 +90,7 @@ export default function Cheers({ onBack, onHome, isAuthenticated, onLogin }: { o
             placeholder="따뜻한 응원 한마디를 남겨주세요"
             maxLength={40}
             disabled={saving}
-            aria-describedby="cheer-help"
+            aria-describedby="cheer-help cheer-warning"
           />
           <button className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] bg-[#1554ff] text-white disabled:cursor-default disabled:bg-[#aac0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]" type="submit" disabled={saving || !message.trim()} aria-label="응원 보내기">
             <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3.7 11.1 15.7-7.2c.7-.3 1.4.4 1.1 1.1l-7.2 15.7c-.3.7-1.3.6-1.5-.1l-1.4-5-4.9-1.4c-.8-.2-.9-1.2-.2-1.6l8.3-4.2-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -110,6 +110,7 @@ export default function Cheers({ onBack, onHome, isAuthenticated, onLogin }: { o
           <p className="flex items-center gap-2 text-[13px] font-medium text-[#b5b5b5]"><span className="text-base font-bold text-[#1554ff]" aria-hidden="true">✱</span>함께 만드는 응원의 순간</p>
           <h2 className="mt-2 text-[24px] leading-tight font-bold tracking-[-0.8px]">우리의 응원이 모이는 곳</h2>
           <p className="mt-2 text-[13px] font-medium text-[#b0b0b0]">40자 이내의 응원을 남겨주세요.</p>
+          <p id="cheer-warning" className="mt-1 text-xs leading-relaxed text-[#b0b0b0]">(부적절한 단어 입력 시 자동 삭제될 수 있습니다)</p>
         </div>
 
         <div className="mt-9 flex items-baseline gap-2">
