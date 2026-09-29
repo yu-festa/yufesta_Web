@@ -4,6 +4,7 @@ import HomeLogo from '../components/HomeLogo'
 import SocialLoginButton from '../components/SocialLoginButton'
 import type { LoginProvider } from '../components/SocialLoginButton'
 import { oauthLoginUrl } from '../api/auth'
+import { resultRevealStore } from '../utils/resultReveal'
 
 export default function Login({ onBack, onHome }: { onBack: () => void; onHome: () => void }) {
   const [message, setMessage] = useState(() => {
@@ -12,6 +13,7 @@ export default function Login({ onBack, onHome }: { onBack: () => void; onHome: 
   })
 
   function continueWith(provider: LoginProvider) {
+    resultRevealStore.clear()
     setMessage(`${provider === 'google' ? 'Google' : 'Kakao'} 로그인 화면으로 이동하고 있어요.`)
     window.location.assign(oauthLoginUrl(provider))
   }

@@ -8,6 +8,7 @@ import type { MatchSummary, MatchApplication } from '../api/match'
 import { profileFromSession } from '../utils/profile'
 import type { ProfileUser } from '../utils/profile'
 import { isMatchOpen } from '../utils/match'
+import { resultRevealStore } from '../utils/resultReveal'
 
 export function useMatchState(enabled = true, authOnly = false) {
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'anonymous' | 'unavailable'>('loading')
@@ -83,6 +84,7 @@ export function useMatchState(enabled = true, authOnly = false) {
       } catch (reason) {
         if (id !== requestId.current) return
         if (reason instanceof ApiError && reason.status === 401) {
+          resultRevealStore.clear()
           setAuthStatus('anonymous')
           setRole(null)
           setProfile(null)

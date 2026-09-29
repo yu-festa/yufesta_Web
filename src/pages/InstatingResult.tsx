@@ -15,6 +15,7 @@ import MatchRejoin from '../components/MatchRejoin'
 import type { ResultView } from '../utils/matchResult'
 import { getMatchTags } from '../api/match'
 import { usePublicResource } from '../hooks/usePublicResource'
+import { resultRevealStore } from '../utils/resultReveal'
 
 const tapFrames: Keyframe[] = [{ transform: 'scale(.96) rotate(-1deg)', offset: 0 }, { transform: 'scale(1.015) rotate(1deg)', offset: .6 }, { transform: 'scale(1) rotate(0)', offset: 1 }]
 const tapTiming: KeyframeAnimationOptions = { duration: 280, easing: 'ease-out' }
@@ -30,9 +31,9 @@ const heartbeatTiming: KeyframeAnimationOptions = { duration: 1600, iterations: 
 const openFrames: Keyframe[] = [{ opacity: 0, transform: 'perspective(800px) rotateY(-16deg) translateY(12px)' }, { opacity: 1, transform: 'none' }]
 const openTiming: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }
 
-function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; isDemo: boolean; onClose: () => void; onReported: (matchId: number) => void }) {
+function Reveal({ result, roundSeq, isDemo, onClose, onReported }: { result: MatchResult; roundSeq?: number; isDemo: boolean; onClose: () => void; onReported: (matchId: number) => void }) {
   const tags = usePublicResource(getMatchTags)
-  const [taps, setTaps] = useState(0)
+  const [taps, setTaps] = useState(() => !isDemo && resultRevealStore.has(roundSeq) ? REVEAL_TAPS : 0)
   const [copyMessage, setCopyMessage] = useState('')
   const heading = useRef<HTMLHeadingElement>(null)
   const revealed = taps === REVEAL_TAPS
@@ -41,6 +42,12 @@ function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; 
   const pending = result.status === 'pending'
   const heartbeatRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, pending)
   useEffect(() => { if (revealed) heading.current?.focus({ preventScroll: true }) }, [revealed])
+
+  function tapCard() {
+    const nextTaps = nextRevealTap(taps)
+    if (nextTaps === REVEAL_TAPS && !isDemo && roundSeq !== undefined) resultRevealStore.mark(roundSeq)
+    setTaps(nextTaps)
+  }
 
   async function copyInstagram(instagram: string) {
     try { await navigator.clipboard.writeText(instagram); setCopyMessage('인스타그램 아이디를 복사했어요.') }
@@ -53,7 +60,7 @@ function Reveal({ result, isDemo, onClose, onReported }: { result: MatchResult; 
     <p className={"mt-[10px] text-[#8690a4] text-[12px] leading-[1.8] break-keep match-description"}>{pending ? '결과 발표까지 조금만 기다려주세요.' : !revealed ? '두근두근, 카드를 5번 두드려주세요.' : result.status === 'matched' ? '축제를 함께할 새로운 친구를 만났어요.' : '다음에는 꼭 좋은 인연이 찾아올 거예요.'}</p>
 
     {pending ? <div className={"flex flex-col items-center [margin:28px_auto_0] [padding:32px_20px] bg-[#fff] [border:1px_solid_#e2e8f7] rounded-[16px] max-w-[330px] [&_>_span]:text-[#8cafff] [&_>_span]:text-[72px] [&_strong]:text-[13px] [&_strong]:text-[#7c8ba5] [&_strong]:mt-[16px] [&_b]:text-[26px] [&_b]:text-[#1554ff] [&_b]:mt-[10px] [&_p]:text-[12px] [&_p]:text-[#8a95a9] [&_p]:leading-[1.8] [&_p]:mt-[20px] match-pending"}><span ref={heartbeatRef} className="inline-block origin-center" aria-hidden="true">♡</span><strong>매칭 결과 발표</strong><b>발표 대기</b><p>발표가 완료되면 이곳에서<br />나의 결과 카드를 열어볼 수 있어요.</p></div> : !revealed ? <>
-      <button type="button" className={"block w-[min(100%,280px)] h-[356px] [margin:32px_auto_0] p-[7px] [border:3px_solid_#fff] rounded-[26px] [background:linear-gradient(140deg,#e4ecff,#fff_38%,#b9caff)] [box-shadow:0_16px_44px_#7187dc33,inset_-3px_-3px_10px_#a3b9f388] cursor-pointer touch-manipulation [-webkit-tap-highlight-color:transparent] match-reveal-card"} onClick={() => setTaps(nextRevealTap)} aria-label={`결과 카드 두드리기, ${taps} / ${REVEAL_TAPS}회`}>
+      <button type="button" className={"block w-[min(100%,280px)] h-[356px] [margin:32px_auto_0] p-[7px] [border:3px_solid_#fff] rounded-[26px] [background:linear-gradient(140deg,#e4ecff,#fff_38%,#b9caff)] [box-shadow:0_16px_44px_#7187dc33,inset_-3px_-3px_10px_#a3b9f388] cursor-pointer touch-manipulation [-webkit-tap-highlight-color:transparent] match-reveal-card"} onClick={tapCard} aria-label={`결과 카드 두드리기, ${taps} / ${REVEAL_TAPS}회`}>
         <span className={"flex relative flex-col items-center justify-center h-full rounded-[18px] overflow-hidden [background:radial-gradient(circle_at_50%_52%,#f2d9efb3,transparent_55%),linear-gradient(135deg,#f6f8ff,#dce6ff)] [box-shadow:inset_2px_2px_12px_#fff] [&_strong]:z-[1] [&_strong]:text-[21px] [&_strong]:text-[#3b61b8] [&_strong]:tracking-[-.7px] [&_strong]:[text-shadow:0_1px_14px_#fff] match-card-inner"} key={taps} ref={tapRef}>
           <span className={"absolute top-[24px] text-[9px] font-semibold tracking-[1.7px] text-[#8096cd] match-card-edition"}>YU FESTA · INSTA-TING</span>
           <span className={"absolute top-[66px] right-[33px] text-[white] text-[30px] match-card-star"} aria-hidden="true">✦</span>
@@ -135,7 +142,7 @@ export default function InstatingResult({ participation, isPreview, onClose, onC
       </div>
       {isDemo && <div className={"flex flex-wrap items-center justify-between gap-[8px] [padding:12px_20px] bg-[#eef2fb] [border-top:1px_solid_#e8edf7] text-[10px] text-[#738198] [&_>_div]:flex [&_>_div]:gap-[4px] [&_button]:[padding:6px_10px] [&_button]:rounded-[5px] [&_button]:cursor-pointer [&_[aria-pressed=true]]:text-[#1554ff] [&_[aria-pressed=true]]:bg-[#fff] [&_[aria-pressed=true]]:[box-shadow:0_2px_5px_#284a8410] [&_[aria-pressed=true]]:font-bold match-preview-controls"}><span>결과 화면 미리보기</span><div>{(['matched', 'unmatched', 'pending'] as const).map(status => <button key={status} type="button" aria-pressed={demoStatus === status} onClick={() => setDemoStatus(status)}>{status === 'matched' ? '성공' : status === 'unmatched' ? '실패' : '발표 대기'}</button>)}</div></div>}
       {notice && <p className="px-6 py-3 text-sm text-[#1554ff]" role="status">{notice}</p>}
-      {!isDemo && loading ? <p role="status" className="px-6 py-20 text-center text-sm">매칭 결과를 불러오고 있어요…</p> : !isDemo && error ? <div className="px-6 py-16 text-center"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="mt-5 rounded-xl bg-[#1554ff] px-5 py-3 text-white" onClick={() => setReload(value => value + 1)}>다시 조회하기</button></div> : !isDemo && result.status === 'matched' && result.partners.length === 0 ? <p className="px-6 py-16 text-center text-sm">표시할 결과 카드가 없어요.</p> : participation ? <Reveal key={`${participation.id}-${demoStatus}`} result={result} isDemo={isDemo} onClose={onClose} onReported={reported} /> : <section className={"[padding:60px_24px] text-center [&_h1]:text-[22px] [&_h1]:font-bold [&_p]:mt-[14px] [&_p]:text-[13px] [&_p]:text-[#7c8ba5] match-missing"}><h1>신청 내역을 찾을 수 없어요</h1><p>마이페이지에서 참여 내역을 다시 확인해주세요.</p><button type="button" className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} onClick={onClose}>마이페이지로 돌아가기</button></section>}
+      {!isDemo && loading ? <p role="status" className="px-6 py-20 text-center text-sm">매칭 결과를 불러오고 있어요…</p> : !isDemo && error ? <div className="px-6 py-16 text-center"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="mt-5 rounded-xl bg-[#1554ff] px-5 py-3 text-white" onClick={() => setReload(value => value + 1)}>다시 조회하기</button></div> : !isDemo && result.status === 'matched' && result.partners.length === 0 ? <p className="px-6 py-16 text-center text-sm">표시할 결과 카드가 없어요.</p> : participation ? <Reveal key={`${participation.id}-${roundSeq}-${demoStatus}`} result={result} roundSeq={roundSeq} isDemo={isDemo} onClose={onClose} onReported={reported} /> : <section className={"[padding:60px_24px] text-center [&_h1]:text-[22px] [&_h1]:font-bold [&_p]:mt-[14px] [&_p]:text-[13px] [&_p]:text-[#7c8ba5] match-missing"}><h1>신청 내역을 찾을 수 없어요</h1><p>마이페이지에서 참여 내역을 다시 확인해주세요.</p><button type="button" className={"block w-full p-[16px] text-[white] bg-[#1554ff] rounded-[8px] text-[14px] font-[650] text-center mt-[16px] cursor-pointer [&:disabled]:opacity-[.55] [&:disabled]:cursor-default match-primary"} onClick={onClose}>마이페이지로 돌아가기</button></section>}
       {!isDemo && !loading && !error && metadata && <div className="px-6 pb-6"><MatchRejoin key={metadata.roundSeq} data={metadata} onChanged={async () => { setReload(value => value + 1); await onChanged() }} /></div>}
       {!isDemo && !loading && !error && result.status === 'pending' && <button type="button" className="mx-auto mb-6 block rounded-xl bg-[#edf3ff] px-5 py-3 text-sm text-[#1554ff]" onClick={() => setReload(value => value + 1)}>발표 여부 다시 확인하기</button>}
     </div>
