@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { useMotion } from '../hooks/useMotion'
 import AppLayout from '../layout/AppLayout'
 import InstatingHeader from '../components/InstatingHeader'
+import InstatingConsentDialog from '../components/InstatingConsentDialog'
+import { instatingConsents } from '../content/instatingConsents'
 import NoticeNotificationActions from '../components/NoticeNotificationActions'
 import { ApiError } from '../api/client'
 import { applicationToForm, toMatchApplicationUpdate, toMatchApplicationRequest, parseMatchTime } from '../utils/match'
@@ -15,7 +17,6 @@ const heartbeatFrames: Keyframe[] = [{ transform: 'scale(1)', offset: 0 }, { tra
 const heartbeatTiming: KeyframeAnimationOptions = { duration: 1800, iterations: Infinity, easing: 'ease-in-out' }
 
 const ages = ['', '19 - 21세', '22 - 24세', '25 - 27세', '28세 이상']
-const consentLabels = ['[필수] 개인정보 수집·이용 동의', '[필수] 서비스 이용약관 동의', '[필수] 만 19세 이상입니다']
 
 export default function InstatingApply({ onHome, onProfile, onSubmitted, alreadyApplied = false, canApply = false, publishAt, initialApplication }: { onHome: () => void; onProfile: () => void; onSubmitted: () => Promise<void>; alreadyApplied?: boolean; canApply?: boolean; publishAt?: string; initialApplication?: MatchApplication }) {
   const editing = Boolean(initialApplication)
@@ -24,6 +25,7 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
     nickname: '', instagram: '', gender: '', age: '', tags: [], performance: '', introduction: '', multipleMatches: false,
   })
   const [consents, setConsents] = useState([false, false, false])
+  const [activeConsent, setActiveConsent] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [interestOptions, setInterestOptions] = useState<MatchTagOption[]>([])
@@ -184,7 +186,12 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
             <div className={"flex items-center gap-[12px] mt-[18px] p-[16px] rounded-[8px] bg-[#f6f8fc] [&_strong]:text-[12px] [&_p]:text-[#838c9e] [&_p]:text-[10px] [&_p]:mt-[5px] instating-privacy"}><span className={"text-[#1554ff] instating-lock"} aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="10" width="14" height="11" rx="3" /><path d="M8 10V6a4 4 0 0 1 8 0v4M12 14v3" /></svg></span><div><strong>매칭 시 인스타 ID가 바로 공개돼요</strong><p>별도 수락 없이 매칭된 상대에게 공개돼요.</p></div></div>
             {!editing && <fieldset className={"mt-[24px] [&_label]:flex [&_label]:items-center [&_label]:gap-[12px] [&_label]:[padding:12px_4px] [&_label]:cursor-pointer [&_input]:w-[18px] [&_input]:h-[18px] [&_input]:accent-[#1554ff] [&_input]:shrink-0 instating-consents"}><legend className="sr-only">신청 필수 동의</legend>
               <label className={"[border-bottom:1px_solid_#e8edf5] mb-[8px] text-[14px] instating-consent-all"}><input type="checkbox" checked={allConsented} onChange={event => { setConsents(consents.map(() => event.target.checked)); setError('') }} /><strong>전체 동의</strong></label>
-              {consentLabels.map((label, index) => <label className={"text-[12px] text-[#788397] instating-consent"} key={label}><input type="checkbox" checked={consents[index]} required onChange={event => { setConsents(current => current.map((value, i) => i === index ? event.target.checked : value)); setError('') }} /><span>{label}</span></label>)}
+              {instatingConsents.map((consent, index) => <div className="flex min-h-[48px] items-center gap-[12px] px-1 text-[12px] text-[#788397] instating-consent" key={consent.id}>
+                <input type="checkbox" aria-label={consent.label} checked={consents[index]} required onChange={event => { setConsents(current => current.map((value, i) => i === index ? event.target.checked : value)); setError('') }} />
+                <button type="button" aria-haspopup="dialog" className="flex min-h-[48px] min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 text-left" onClick={() => setActiveConsent(index)}>
+                  <span>{consent.label}</span><svg className="shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+                </button>
+              </div>)}
             </fieldset>}
           </>}
           {tagsError && <p role="alert" className="mt-3 text-sm text-red-700">{tagsError}<button type="button" className="ml-2 underline" onClick={() => setTagReload(value => value + 1)}>다시 불러오기</button></p>}
@@ -204,6 +211,11 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
           <button type="button" className={"block w-full min-h-[52px] p-[14px] rounded-[8px] text-[15px] font-bold cursor-pointer text-[#758198] mt-[8px] instating-secondary"} onClick={onHome}>홈으로 돌아가기</button>
         </section>}
       </div>
+      {activeConsent !== null && <InstatingConsentDialog consent={instatingConsents[activeConsent]} onClose={() => setActiveConsent(null)} onAgree={() => {
+        setConsents(current => current.map((value, index) => index === activeConsent ? true : value))
+        setError('')
+        setActiveConsent(null)
+      }} />}
     </AppLayout>
   )
 }

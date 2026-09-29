@@ -39,7 +39,7 @@ const previewUser: ProfileUser = {
   }],
 }
 
-const tagLabels: Record<MatchTag, string> = {
+export const matchTagLabels: Record<MatchTag, string> = {
   ALCOHOL: '술', PERFORMANCE: '공연', SPORTS: '운동', GAME: '게임', CAFE: '카페',
   MOVIE: '영화', MUSIC: '음악', PHOTO: '사진', PET: '반려동물', ETC: '기타',
 }
@@ -58,7 +58,7 @@ export function profileFromSession(auth: AuthMe, application: MatchApplication |
       published: summary?.my?.lastResult?.roundSeq === application.roundSeq || (summary?.currentRound.seq === application.roundSeq && summary.currentRound.status === 'PUBLISHED'),
       nickname: application.nickname,
       instagram: application.instagramId,
-      interests: application.tags.map(tag => tagLabels[tag]),
+      interests: application.tags.map(tag => matchTagLabels[tag]),
       // 카드의 상대 정보는 결과 화면에서 따로 조회합니다.
       result: { status: 'pending' },
     }],
