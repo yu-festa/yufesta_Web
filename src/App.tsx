@@ -21,6 +21,7 @@ import { useMatchState } from './hooks/useMatchState'
 import MapLoadBoundary from './components/MapLoadBoundary'
 import AdminMain from './pages/AdminMain'
 import { isAdminRole, loginDestination } from './utils/admin'
+import { track, trackPage } from './utils/analytics'
 
 const FestivalMap = lazy(() => import('./pages/FestivalMap'))
 const festivalStart = resolveFestivalStart(import.meta.env.DEV ? import.meta.env.VITE_FESTIVAL_START_AT : undefined)
@@ -90,12 +91,14 @@ const App = () => {
 
   useEffect(() => {
     if (adminEntry || authenticatedLogin) {
+      if (authenticatedLogin) track('login_completed')
       window.history.replaceState(null, '', loginDestination(role))
       window.dispatchEvent(new PopStateEvent('popstate'))
     }
   }, [adminEntry, authenticatedLogin, role])
 
   useEffect(() => { markSplashSeen() }, [])
+  useEffect(() => { trackPage(page) }, [page])
 
   useEffect(() => {
     if (authStatus === 'anonymous' && requiresAuthentication && (requestedPage === 'admin' || profileAccess.page === 'login')) {
