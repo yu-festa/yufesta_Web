@@ -92,9 +92,10 @@ export default function Cheers({ onBack, onHome, isAuthenticated, onLogin }: { o
             disabled={saving}
             aria-describedby="cheer-help cheer-warning"
           />
-          <button className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] bg-[#1554ff] text-white disabled:cursor-default disabled:bg-[#aac0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]" type="submit" disabled={saving || !message.trim()} aria-label="응원 보내기">
-            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3.7 11.1 15.7-7.2c.7-.3 1.4.4 1.1 1.1l-7.2 15.7c-.3.7-1.3.6-1.5-.1l-1.4-5-4.9-1.4c-.8-.2-.9-1.2-.2-1.6l8.3-4.2-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <button className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] bg-[#1554ff] text-white disabled:cursor-default disabled:bg-[#aac0ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1554ff]" type="submit" disabled={saving || !message.trim()} aria-label={saving ? '응원 보내는 중' : '응원 보내기'} aria-busy={saving}>
+            {saving ? <span className="size-5 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" aria-hidden="true" /> : <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3.7 11.1 15.7-7.2c.7-.3 1.4.4 1.1 1.1l-7.2 15.7c-.3.7-1.3.6-1.5-.1l-1.4-5-4.9-1.4c-.8-.2-.9-1.2-.2-1.6l8.3-4.2-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
           </button>
+          <span className="sr-only" role="status">{saving ? '응원을 보내고 있어요.' : ''}</span>
         </form>
       }
     >
