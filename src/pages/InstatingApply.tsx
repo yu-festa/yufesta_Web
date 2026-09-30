@@ -12,6 +12,7 @@ import type { InstatingApplication as Application } from '../utils/instating'
 import { createMatchApplication, updateMyApplication, getMatchTags, getMatchSlots } from '../api/match'
 import type { MatchTagOption, MatchApplication } from '../api/match'
 import { usePublicResource } from '../hooks/usePublicResource'
+import { track } from '../utils/analytics'
 
 const heartbeatFrames: Keyframe[] = [{ transform: 'scale(1)', offset: 0 }, { transform: 'scale(1.08)', offset: .15 }, { transform: 'scale(1.02)', offset: .28 }, { transform: 'scale(1)', offset: .4 }, { transform: 'scale(1)', offset: 1 }]
 const heartbeatTiming: KeyframeAnimationOptions = { duration: 1800, iterations: Infinity, easing: 'ease-in-out' }
@@ -89,6 +90,7 @@ export default function InstatingApply({ onHome, onProfile, onSubmitted, already
         if (reason instanceof ApiError && (reason.status === 409 || reason.status === 401)) void onSubmitted()
         return
       } finally { submitting.current = false; setSaving(false) }
+      track('instating_applied', { editing })
       setStep(4)
       void onSubmitted()
       return

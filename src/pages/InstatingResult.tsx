@@ -16,6 +16,7 @@ import type { ResultView } from '../utils/matchResult'
 import { getMatchTags } from '../api/match'
 import { usePublicResource } from '../hooks/usePublicResource'
 import { resultRevealStore } from '../utils/resultReveal'
+import { track } from '../utils/analytics'
 
 const tapFrames: Keyframe[] = [{ transform: 'scale(.96) rotate(-1deg)', offset: 0 }, { transform: 'scale(1.015) rotate(1deg)', offset: .6 }, { transform: 'scale(1) rotate(0)', offset: 1 }]
 const tapTiming: KeyframeAnimationOptions = { duration: 280, easing: 'ease-out' }
@@ -42,6 +43,7 @@ function Reveal({ result, roundSeq, isDemo, onClose, onReported }: { result: Mat
   const pending = result.status === 'pending'
   const heartbeatRef = useMotion<HTMLSpanElement>(heartbeatFrames, heartbeatTiming, pending)
   useEffect(() => { if (revealed) heading.current?.focus({ preventScroll: true }) }, [revealed])
+  useEffect(() => { if (revealed && !isDemo) track('instating_result_viewed', { status: result.status }) }, [revealed, isDemo, result.status])
 
   function tapCard() {
     const nextTaps = nextRevealTap(taps)
