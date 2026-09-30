@@ -40,7 +40,7 @@ export class ApiError extends Error {
   }
 }
 
-function apiUrl(path: string) {
+export function apiUrl(path: string) {
   return `${requestBase}${path.startsWith('/') ? path : `/${path}`}`
 }
 

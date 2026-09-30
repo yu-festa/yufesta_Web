@@ -67,7 +67,7 @@ const App = () => {
   const [lostPostId, setLostPostId] = useState(getLostPostId)
   const festivalOpened = useFestivalOpening(festivalStart)
   const needsMatchState = requestedPage === 'entry' ? festivalOpened : ['main', 'admin', 'profile', 'instating-result', 'instating-apply', 'instating-edit', 'login', 'lost', 'lost-write', 'lost-detail', 'cheers'].includes(requestedPage)
-  const { authStatus, role, summary: matchSummary, profile: serverProfile, application, alreadyApplied, canApply, error: matchError, refreshing, refresh, clearSession, receivedAt, now } = useMatchState(needsMatchState, ['admin', 'lost', 'lost-write', 'lost-detail', 'cheers'].includes(requestedPage))
+  const { authStatus, role, summary: matchSummary, profile: serverProfile, application, alreadyApplied, canApply, error: matchError, refreshing, refresh, refreshAuth, clearSession, receivedAt, now, latestResult, resultRevision } = useMatchState(needsMatchState, ['admin', 'lost', 'lost-write', 'lost-detail', 'cheers'].includes(requestedPage))
   const profileAccess = resolveProfileAccess(serverProfile, previewEnabled)
   const [resultId, setResultId] = useState(() => window.location.hash.slice('#profile/result/'.length))
   const [performanceId, setPerformanceId] = useState(() => window.location.hash.startsWith('#performance/') ? window.location.hash.slice('#performance/'.length) : '')
@@ -78,8 +78,8 @@ const App = () => {
   const page = adminEntry ? 'admin' : authenticatedLogin ? 'main' : requestedPage === 'entry' ? (festivalOpened ? 'main' : 'landing') : requiresAuthentication && authStatus === 'anonymous' && (requestedPage === 'admin' || profileAccess.page === 'login') ? 'login' : requestedPage
   const handleAdminAuthError = useCallback((status: number) => {
     if (status === 401) clearSession()
-    else void refresh()
-  }, [clearSession, refresh])
+    else void refreshAuth()
+  }, [clearSession, refreshAuth])
 
   useEffect(() => {
     // 루트 진입은 로그인 여부가 아니라 축제 시작 시각으로만 결정합니다.
@@ -211,7 +211,7 @@ const App = () => {
   return (
     <>
       <div inert={showSplash} aria-hidden={showSplash || undefined}>
-        {needsMatchState && matchError && <div className="mx-auto max-w-[480px] bg-red-50 px-5 py-3 text-sm text-red-800" role="alert">{matchError}<button type="button" className="ml-3 underline disabled:opacity-50" disabled={refreshing} onClick={() => void refresh()}>다시 불러오기</button></div>}
+        {needsMatchState && matchError && <div className="mx-auto max-w-[480px] bg-red-50 px-5 py-3 text-sm text-red-800" role="alert">{matchError}<button type="button" className="ml-3 underline disabled:opacity-50" disabled={refreshing} onClick={() => void (authStatus === 'unavailable' ? refreshAuth() : refresh())}>다시 불러오기</button></div>}
         {page === 'landing' && <Landing target={festivalStart} />}
         {page === 'timetable' && <Timetable onBack={closePage} onHome={goHome} />}
         {page === 'performance' && <PerformanceDetail clubId={/^\d+$/.test(performanceId) ? Number(performanceId) : null} onBack={closePage} onHome={goHome} />}
@@ -222,10 +222,10 @@ const App = () => {
         {requiresAuthentication && authStatus === 'unavailable' && !profileAccess.isPreview && <p className="mx-auto max-w-[480px] px-5 py-20 text-center text-sm text-[#63708a]">서버 연결을 확인한 후 다시 불러와 주세요.</p>}
         {page === 'login' && <Login onBack={closePage} onHome={goHome} />}
         {(page === 'main' || page === 'admin' || page === 'profile' || page === 'instating-result' || page === 'instating-apply' || page === 'instating-edit') && authStatus === 'loading' && <div className="grid min-h-dvh place-items-center text-sm text-[#63708a]" role="status">로그인 상태를 확인하고 있어요…</div>}
-        {page === 'admin' && adminRole && <AdminMain role={adminRole} onLogout={signOut} onAuthError={handleAdminAuthError} onRefreshAuth={refresh} />}
+        {page === 'admin' && adminRole && <AdminMain role={adminRole} onLogout={signOut} onAuthError={handleAdminAuthError} onRefreshAuth={refreshAuth} />}
         {page === 'admin' && authStatus === 'authenticated' && !adminRole && <section className="mx-auto max-w-[480px] px-6 py-20 text-center"><h1 className="text-xl font-bold">운영자 전용 페이지입니다.</h1><p className="my-5 text-sm text-[#63708a]">이 계정에는 운영자 권한이 없어요. 등록된 운영자 계정으로 로그인해 주세요.</p><button className="rounded-xl bg-[#1554ff] px-6 py-3 text-white" onClick={goHome}>메인으로 돌아가기</button></section>}
-        {page === 'profile' && (authStatus === 'authenticated' || profileAccess.isPreview) && (profileAccess.page === 'profile' ? <Profile application={application} onEdit={() => openPage('instating-edit')} user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} receivedAt={receivedAt} now={now} onResult={openResult} onApply={() => openPage('instating-apply')} onLogout={authStatus === 'authenticated' ? signOut : undefined} matchSummary={matchSummary} alreadyApplied={alreadyApplied} canApply={canApply} onChanged={refresh} /> : <Login onBack={closePage} onHome={goHome} />)}
-        {page === 'instating-result' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingResult key={resultId} participation={resolveResultParticipation(profileAccess.user.participations, resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} onChanged={refresh} />}
+        {page === 'profile' && (authStatus === 'authenticated' || profileAccess.isPreview) && (profileAccess.page === 'profile' ? <Profile latestResult={latestResult} resultRevision={resultRevision} application={application} onEdit={() => openPage('instating-edit')} user={profileAccess.user} isPreview={profileAccess.isPreview} onBack={closePage} receivedAt={receivedAt} now={now} onResult={openResult} onApply={() => openPage('instating-apply')} onLogout={authStatus === 'authenticated' ? signOut : undefined} matchSummary={matchSummary} alreadyApplied={alreadyApplied} canApply={canApply} onChanged={refresh} /> : <Login onBack={closePage} onHome={goHome} />)}
+        {page === 'instating-result' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingResult latestResult={latestResult} resultRevision={resultRevision} key={resultId} participation={resolveResultParticipation(profileAccess.user.participations, resultId)} isPreview={profileAccess.isPreview} onClose={openProfile} onChanged={refresh} />}
         {page === 'instating-edit' && authStatus === 'authenticated' && (application ? <InstatingApply key={application.id} initialApplication={application} onHome={goHome} onProfile={openProfile} canApply={canApply} onSubmitted={refresh} publishAt={matchSummary?.currentRound.publishAt} /> : <div className="mx-auto max-w-[480px] p-8 text-center"><p>{refreshing ? '신청 정보를 불러오는 중…' : '수정할 신청 내역이 없어요.'}</p><button className="mt-5 text-[#1554ff] underline" onClick={openProfile}>마이페이지로 돌아가기</button></div>)}
         {page === 'instating-apply' && authStatus !== 'loading' && profileAccess.page === 'profile' && <InstatingApply onHome={goHome} onProfile={openProfile} alreadyApplied={alreadyApplied} canApply={canApply} onSubmitted={refresh} publishAt={matchSummary?.currentRound.publishAt} />}
         {page === 'main' && authStatus !== 'loading' && <Main onOpenNotices={() => openPage('notices')} onOpenNotice={openNotice} onHome={goHome} onOpenTimetable={() => openPage('timetable')} onOpenPerformance={openPerformance} onOpenCheers={() => openPage('cheers')} onOpenMap={() => openPage('map')} onOpenLost={() => openPage('lost')} alreadyApplied={alreadyApplied} canApply={canApply} matchSummary={matchSummary} receivedAt={receivedAt} onApplyInstating={() => authStatus !== 'authenticated' ? openLogin() : alreadyApplied ? openProfile() : openPage('instating-apply')} onOpenProfile={() => profileAccess.page === 'login' ? openLogin() : openPage('profile')} />}

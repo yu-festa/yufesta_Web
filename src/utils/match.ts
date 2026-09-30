@@ -8,10 +8,8 @@ export function parseMatchTime(value: string) {
   return Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ? value : `${value}+09:00`)
 }
 
-export function isMatchOpen(summary: MatchSummary | null, receivedAt: number, now = Date.now()) {
-  if (!summary || summary.currentRound.status !== 'OPEN') return false
-  const serverNow = parseMatchTime(summary.serverNow) + Math.max(0, now - receivedAt)
-  return serverNow >= parseMatchTime(summary.currentRound.openAt) && serverNow < parseMatchTime(summary.currentRound.closeAt)
+export function isMatchOpen(summary: MatchSummary | null) {
+  return summary?.currentRound.status === 'OPEN'
 }
 
 const ageBands: Record<string, AgeBand> = { '19 - 21세': '19-21', '22 - 24세': '22-24', '25 - 27세': '25-27', '28세 이상': '28+' }

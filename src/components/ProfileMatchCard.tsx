@@ -11,8 +11,10 @@ export function ProfileChevron({ down = false }: { down?: boolean }) {
 }
 
 export function ProfileSchedule({ round, now, applied }: { round: MatchRound; now: number; applied: boolean }) {
+  const remaining = closeTimeRemaining(round.closeAt, now)
+  const deadlineLabel = round.status === 'CLOSED' || round.status === 'PUBLISHED' ? '접수 마감' : remaining === '접수 마감' ? '마감 확인 중' : remaining
   return <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-[8px] bg-[#eff3ff] px-3 py-3 text-[#171717]">
-    <div className="min-w-0"><p className="text-[10px] text-[#808080]">{applied ? '수정·취소 마감' : '신청 마감'}</p><div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1"><time className="text-base leading-none font-bold" dateTime={round.closeAt}>{matchClock(round.closeAt)}</time><span className="text-[11px] leading-none font-medium text-[#1554ff]" role="timer" aria-live="off">{round.status === 'CLOSED' || round.status === 'PUBLISHED' ? '접수 마감' : closeTimeRemaining(round.closeAt, now)}</span></div></div>
+    <div className="min-w-0"><p className="text-[10px] text-[#808080]">{applied ? '수정·취소 마감' : '신청 마감'}</p><div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1"><time className="text-base leading-none font-bold" dateTime={round.closeAt}>{matchClock(round.closeAt)}</time><span className="text-[11px] leading-none font-medium text-[#1554ff]" role="timer" aria-live="off">{deadlineLabel}</span></div></div>
     <div className="border-l border-[#d1ddff] pl-3"><p className="text-[10px] text-[#808080]">결과 발표</p><time className="mt-1 block text-base leading-none font-bold" dateTime={round.publishAt}>{matchClock(round.publishAt)}</time></div>
   </div>
 }
@@ -50,7 +52,7 @@ export default function ProfileMatchCard({ card, now, canManage, busy, onEdit, o
       {round && <ProfileSchedule round={round} now={now} applied />}
       {application?.needsSlotReselect && <p className="mt-3 rounded-lg bg-[#eff3ff] px-3 py-2 text-xs leading-relaxed text-[#1554ff]">이전 공연을 현재 회차에서 사용할 수 없어요. 신청 정보를 수정해 공연을 다시 선택해 주세요.</p>}
       {canManage && <button type="button" disabled={busy} className={`${profileButton} mt-3 border border-[#d5dfff] text-[#1554ff]`} onClick={onEdit}>신청 정보 수정하기</button>}
-      {round && !canManage && !busy && (round.status === 'CLOSED' || closeTimeRemaining(round.closeAt, now) === '접수 마감') && <p className="mt-2 text-[11px] text-[#808080]">접수가 마감되어 수정·취소할 수 없어요.</p>}
+      {round?.status === 'CLOSED' && !canManage && !busy && <p className="mt-2 text-[11px] text-[#808080]">접수가 마감되어 수정·취소할 수 없어요.</p>}
     </>}
     {application && <ApplicationDetails application={application} highlighted={highlighted} />}
     {!published && application && canManage && <button type="button" disabled={busy} className="mx-auto mt-2 block min-h-9 cursor-pointer px-3 text-xs text-[#fa6581] underline underline-offset-2 disabled:cursor-default disabled:opacity-40" onClick={onCancel}>신청 취소하기</button>}

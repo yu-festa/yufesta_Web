@@ -1,6 +1,6 @@
 import { ApiError } from '../api/client.ts'
 import { getMyMatchResults } from '../api/match.ts'
-import type { MatchApplication, MatchRound, MatchSummary } from '../api/match.ts'
+import type { MatchApplication, MatchRound, MatchSummary, MyMatchResult } from '../api/match.ts'
 import type { InstatingParticipation } from './profile.ts'
 import { parseMatchTime } from './match.ts'
 import { toMatchResult } from './matchResult.ts'
@@ -15,13 +15,13 @@ export type ProfileRoundCard = {
 }
 
 // 결과 API는 회차를 지정할 수 있지만, 신청 API는 현재 회차만 제공합니다.
-export async function getProfileResultHistory(lastRoundSeq?: number): Promise<ResultView[]> {
+export async function getProfileResultHistory(lastRoundSeq?: number, latestResult?: MyMatchResult | null): Promise<ResultView[]> {
   if (lastRoundSeq === undefined) return []
   if (!Number.isSafeInteger(lastRoundSeq) || lastRoundSeq < 1 || lastRoundSeq > 50) throw new Error('발표 회차 정보를 확인하지 못했어요.')
   const results: ResultView[] = []
   for (let roundSeq = 1; roundSeq <= lastRoundSeq; roundSeq++) {
     try {
-      const result = toMatchResult(await getMyMatchResults(roundSeq))
+      const result = toMatchResult(latestResult?.roundSeq === roundSeq ? latestResult : await getMyMatchResults(roundSeq))
       if (result.roundSeq !== roundSeq) throw new Error('요청한 회차와 결과 회차가 달라요. 다시 조회해 주세요.')
       results.push(result)
     } catch (reason) {

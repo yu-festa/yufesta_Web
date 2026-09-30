@@ -8,6 +8,7 @@ import purmaSuccess from '../assets/Instating/purma-success.png'
 import purmaUnmatched from '../assets/Instating/purma-unmatched.png'
 import copyIcon from '../assets/Instating/copy.svg'
 import { getMyMatchResults } from '../api/match'
+import type { MyMatchResult } from '../api/match'
 import { ApiError } from '../api/client'
 import { toMatchResult } from '../utils/matchResult'
 import MatchReportForm from '../components/MatchReportForm'
@@ -93,7 +94,7 @@ function Reveal({ result, roundSeq, isDemo, onClose, onReported }: { result: Mat
   </section>
 }
 
-export default function InstatingResult({ participation, isPreview, onClose, onChanged }: { participation?: InstatingParticipation; isPreview: boolean; onClose: () => void; onChanged: () => Promise<void> }) {
+export default function InstatingResult({ participation, isPreview, onClose, onChanged, latestResult, resultRevision }: { participation?: InstatingParticipation; isPreview: boolean; onClose: () => void; onChanged: () => Promise<void>; latestResult: MyMatchResult | null; resultRevision: number }) {
   const [demoStatus, setDemoStatus] = useState<'matched' | 'unmatched' | 'pending'>('matched')
   const isDemo = isPreview && participation?.isDemo === true
   const [metadata, setMetadata] = useState<ResultView | null>(null)
@@ -103,16 +104,17 @@ export default function InstatingResult({ participation, isPreview, onClose, onC
   const [reload, setReload] = useState(0)
   const [notice, setNotice] = useState('')
   const roundSeq = participation?.roundSeq
+  const usedRevision = useRef(-1)
   useEffect(() => {
     if (isDemo || !roundSeq) return
     let active = true
     let request = 0
-    const load = async () => {
+    const load = async (snapshot?: MyMatchResult) => {
       const id = ++request
       setLoading(true)
       setError('')
       try {
-        const data = toMatchResult(await getMyMatchResults(roundSeq))
+        const data = toMatchResult(snapshot ?? await getMyMatchResults(roundSeq))
         if (data.roundSeq !== roundSeq) throw new Error('요청한 회차와 결과 회차가 달라요. 다시 조회해 주세요.')
         if (active && id === request) { setServerResult(data.result); setMetadata(data) }
       } catch (reason) {
@@ -122,11 +124,13 @@ export default function InstatingResult({ participation, isPreview, onClose, onC
         else { setServerResult(null); setError(reason instanceof Error ? reason.message : '결과를 불러오지 못했어요.') }
       } finally { if (active && id === request) setLoading(false) }
     }
-    void load()
+    const fresh = usedRevision.current !== resultRevision && latestResult?.roundSeq === roundSeq ? latestResult : undefined
+    usedRevision.current = resultRevision
+    void load(fresh)
     const onFocus = () => { if (document.visibilityState === 'visible') void load() }
     document.addEventListener('visibilitychange', onFocus)
     return () => { active = false; document.removeEventListener('visibilitychange', onFocus) }
-  }, [isDemo, roundSeq, reload])
+  }, [isDemo, roundSeq, reload, latestResult, resultRevision])
 
   function reported(matchId: number) {
     setServerResult(current => current?.status === 'matched' ? { ...current, partners: current.partners.filter(partner => partner.matchId !== matchId) } : current)
