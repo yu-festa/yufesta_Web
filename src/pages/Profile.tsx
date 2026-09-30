@@ -7,7 +7,7 @@ import { usePublicResource } from '../hooks/usePublicResource'
 import { buildProfileRoundCards, getProfileResultHistory, matchClock, profileServerNow } from '../utils/profileHistory'
 import type { ProfileUser } from '../utils/profile'
 import { cancelMyApplication, rejoinMatch } from '../api/match'
-import type { MatchSummary, MatchApplication } from '../api/match'
+import type { MatchSummary, MatchApplication, MyMatchResult } from '../api/match'
 import { isMatchOpen } from '../utils/match'
 import purma from '../assets/Instating/purma-success.png'
 
@@ -15,9 +15,10 @@ type ProfileProps = {
   user: ProfileUser; isPreview: boolean; onBack: () => void; onResult: (id: string) => void; onApply: () => void
   onLogout?: () => Promise<void>; matchSummary?: MatchSummary | null; alreadyApplied?: boolean; canApply?: boolean
   onChanged: () => Promise<void>; application?: MatchApplication | null; onEdit: () => void; receivedAt: number; now: number
+  latestResult: MyMatchResult | null; resultRevision: number
 }
 
-export default function Profile({ user, isPreview, onBack, onResult, onApply, onLogout, matchSummary, alreadyApplied = false, canApply = false, onChanged, application, onEdit, receivedAt, now }: ProfileProps) {
+export default function Profile({ user, isPreview, onBack, onResult, onApply, onLogout, matchSummary, alreadyApplied = false, canApply = false, onChanged, application, onEdit, receivedAt, now, latestResult: refreshedResult, resultRevision }: ProfileProps) {
   const [loggingOut, setLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState('')
   const logoutLock = useRef(false)
@@ -29,11 +30,11 @@ export default function Profile({ user, isPreview, onBack, onResult, onApply, on
   const [actionError, setActionError] = useState('')
   const actionLock = useRef(false)
   const currentRound = matchSummary?.currentRound
-  const roundOpen = isMatchOpen(matchSummary ?? null, receivedAt, now)
+  const roundOpen = isMatchOpen(matchSummary ?? null)
   const lastRoundSeq = isPreview ? undefined : matchSummary?.my?.lastResult?.roundSeq
   // 접수 시작·이월·취소 때에도 서버의 재참여 가능 여부를 새로 확인합니다.
-  const historyQuery = useMemo(() => ({ lastRoundSeq, roundOpen, currentRoundSeq: currentRound?.seq, alreadyApplied }), [lastRoundSeq, roundOpen, currentRound?.seq, alreadyApplied])
-  const loadResults = useCallback(() => getProfileResultHistory(historyQuery.lastRoundSeq), [historyQuery])
+  const historyQuery = useMemo(() => ({ lastRoundSeq, roundOpen, currentRoundSeq: currentRound?.seq, alreadyApplied, resultRevision, refreshedResult }), [lastRoundSeq, roundOpen, currentRound?.seq, alreadyApplied, resultRevision, refreshedResult])
+  const loadResults = useCallback(() => getProfileResultHistory(historyQuery.lastRoundSeq, historyQuery.refreshedResult), [historyQuery])
   const history = usePublicResource(loadResults)
   const results = history.data?.filter(result => lastRoundSeq !== undefined && result.roundSeq <= lastRoundSeq) ?? []
   const latestResult = results.find(result => result.roundSeq === lastRoundSeq)

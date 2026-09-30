@@ -30,12 +30,13 @@ test('신청 정보를 정규화하고 태그·공연 선택·세 가지 동의�
   for (const tags of [['음악'], ['MUSIC', 'MUSIC'], ['MUSIC', 'CAFE', 'MUSIC', 'CAFE']]) assert.throws(() => toMatchApplicationRequest({ ...form, tags }, options, [true, true, true]), /태그/)
 })
 
-test('신청 가능 시간은 기기 시계 오차 대신 수신한 서버 시각과 경과 시간으로 판단한다', () => {
+test('신청 가능 여부는 예정 시각이나 기기 시계 대신 서버의 OPEN 상태로 판단한다', () => {
   assert.equal(parseMatchTime('2026-10-02T15:30:00'), Date.parse('2026-10-02T06:30:00Z'))
-  assert.equal(isMatchOpen(summary, 1000, 1000), true)
-  assert.equal(isMatchOpen(summary, 1000, 1000 + 20 * 60 * 1000), false)
-  assert.equal(isMatchOpen({ ...summary, currentRound: { ...summary.currentRound, status: 'CLOSED' } }, 0, 0), false)
-  assert.equal(isMatchOpen(null, 0, 0), false)
+  assert.equal(isMatchOpen(summary), true)
+  assert.equal(isMatchOpen({ ...summary, serverNow: '2026-10-02T00:00:00' }), true)
+  assert.equal(isMatchOpen({ ...summary, serverNow: '2026-10-03T00:00:00' }), true)
+  for (const status of ['SCHEDULED', 'CLOSED', 'PUBLISHED'] as const) assert.equal(isMatchOpen({ ...summary, currentRound: { ...summary.currentRound, status } }), false)
+  assert.equal(isMatchOpen(null), false)
 })
 
 test('신청→조회→취소→재참여를 인증·CSRF와 함께 처리하고 빈 성공 응답을 허용한다', async () => {
