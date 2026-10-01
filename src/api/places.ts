@@ -1,7 +1,7 @@
 import { apiRequest } from './client.ts'
 import type { FestivalPlace, PlaceCategory } from '../data/festivalMap.ts'
 
-export type ServerPlaceCategory = 'STAGE' | 'TOILET' | 'DELIVERY_ZONE'
+export type ServerPlaceCategory = 'STAGE' | 'TOILET' | 'DELIVERY_ZONE' | 'BOOTH'
 
 export type PlaceListItem = {
   id: number
@@ -35,11 +35,11 @@ export function getPlace(placeId: number) {
 }
 
 const categoryMap: Record<ServerPlaceCategory, PlaceCategory> = {
-  STAGE: 'stage', TOILET: 'restroom', DELIVERY_ZONE: 'delivery',
+  STAGE: 'stage', TOILET: 'restroom', DELIVERY_ZONE: 'delivery', BOOTH: 'booth',
 }
 
 export const placeCategoryLabels: Record<ServerPlaceCategory, string> = {
-  STAGE: '공연장', TOILET: '화장실', DELIVERY_ZONE: '배달존',
+  STAGE: '공연장', TOILET: '화장실', DELIVERY_ZONE: '배달존', BOOTH: '푸드트럭',
 }
 
 export function toFestivalPlace(place: PlaceListItem): FestivalPlace {

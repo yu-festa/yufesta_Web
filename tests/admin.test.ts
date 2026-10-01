@@ -100,7 +100,7 @@ test('공지·장소·이벤트 등록 수정 삭제는 명세 경로와 본문�
     return init?.method === 'DELETE' ? new Response(null, { status: 204 }) : Response.json({ data: { id: 51 } })
   }) as typeof fetch
   const notice = { title: '축제 안내', body: '안내 본문', banner: true }
-  const place: admin.PlaceInput = { name: '무대', category: 'STAGE', latitude: 35.8, longitude: 128.7, description: '', building: '', floor: '', sortOrder: 3, active: false }
+  const place: admin.PlaceInput = { name: '커피차·푸드트럭', category: 'BOOTH', latitude: 35.8, longitude: 128.7, description: '', building: '', floor: '', sortOrder: 3, active: false }
   const event = { name: '공연', timeText: '18:00', sortOrder: 2 }
   await admin.getNotices(); await admin.getNotice(51)
   await admin.createNotice(notice); await admin.updateNotice(51, notice); await admin.deleteNotice(51)
@@ -111,6 +111,7 @@ test('공지·장소·이벤트 등록 수정 삭제는 명세 경로와 본문�
     'POST /api/v1/admin/places', 'PATCH /api/v1/admin/places/61', 'POST /api/v1/admin/places/61/events', 'PATCH /api/v1/admin/places/61/events/71',
   ])
   assert.deepEqual(calls[3].body, notice)
+  assert.deepEqual(calls[5].body, place)
   assert.deepEqual(calls[6].body, place)
   assert.deepEqual(calls[8].body, event)
 })

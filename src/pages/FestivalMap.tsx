@@ -184,9 +184,9 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
                   </button>
                 </li>)}
               </ul> : <p className="mt-3 text-xs text-[#667085]">반경 500m 안에서 확인된 화장실 건물이 없어요.</p>}
-            </> : filter === 'delivery' && !places.length ? <>
-              <h2 className="text-sm font-bold">등록된 배달존이 없어요</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#667085]">배달존 위치가 등록되면 지도에서 확인할 수 있어요.</p>
+            </> : (filter === 'delivery' || filter === 'booth') && !places.length ? <>
+              <h2 className="text-sm font-bold">등록된 {filter === 'booth' ? '푸드트럭' : '배달존'}이 없어요</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-[#667085]">{filter === 'booth' ? '푸드트럭' : '배달존'} 위치가 등록되면 지도에서 확인할 수 있어요.</p>
             </> : <>
               <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold">{filter === 'all' ? '축제 주변 장소' : mapCategories.find(category => category.id === filter)?.label ?? '장소'} <span className="ml-1 text-[#1554ff]">{places.length}</span></h2><span className="text-[11px] text-[#8b95a5]">핀을 눌러 확인하세요</span></div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-[#667085]">{usingServerPlaces ? '서버에 등록된 장소를 카테고리별로 확인할 수 있어요. 핀을 선택하면 상세 설명과 진행 이벤트를 불러옵니다.' : filter === 'restroom' ? '층별 위치와 남녀 구분을 확인해 보세요. 공개 자료에서 확인한 일부 시설이며, 당일 개방 여부는 미확인이에요.' : <>2025년 5월 공연장 · 교내 상설 화장실<br />올해 배치와 다를 수 있어요. 배달존은 위치 확인 중이에요.</>}</p>
@@ -209,7 +209,7 @@ export default function FestivalMap({ onBack }: { onBack: () => void }) {
       <dialog ref={dialogRef} className="fixed inset-0 m-auto max-h-[80dvh] w-[min(420px,calc(100%-40px))] overflow-y-auto rounded-2xl border-0 bg-white p-5 text-[#222] shadow-xl backdrop:bg-[#11182766]" aria-labelledby="map-info-title" onClick={event => { if (event.target === event.currentTarget) dialogRef.current?.close() }}>
         <div className="flex items-center justify-between gap-3"><h2 id="map-info-title" className="text-lg font-bold">지도 정보</h2><button className="grid size-10 cursor-pointer place-items-center" onClick={() => dialogRef.current?.close()} aria-label="지도 정보 닫기"><ControlIcon name="close" /></button></div>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-[#667085]">
-          {usingServerPlaces ? <p>축제 운영진이 등록한 공연장·화장실·배달존을 표시해요. 지도 핀이나 장소 목록을 선택하면 위치와 행사 안내를 확인할 수 있어요.</p> : <>
+          {usingServerPlaces ? <p>축제 운영진이 등록한 공연장·화장실·배달존·푸드트럭을 표시해요. 지도 핀이나 장소 목록을 선택하면 위치와 행사 안내를 확인할 수 있어요.</p> : <>
           <p>공연장은 <strong className="font-semibold text-[#344054]">2025년 5월 26~28일 천마대동제</strong> 자료를 참고했어요. 2025년 가을축제 배치도는 확인되지 않아 반영하지 않았어요.</p>
           <p>화장실은 교내 상설 시설이에요. 핀은 건물 대표 위치예요. 상세 안내에서 도면으로 확인한 실내 위치와 층만 확인된 시설을 구분해 보여드려요. 공개 자료에 없는 층·호실은 추정하지 않았으며, 모든 화장실을 포함하지는 않아요. 축제 당일·야간 개방 여부는 미확인이에요.</p>
           <p>배달존은 작년 공식 위치를 확인하지 못해 표시하지 않았어요. 올해 축제의 배치·운영 여부는 추후 공지를 확인해 주세요.</p>

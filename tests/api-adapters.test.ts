@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { toFestivalPlace, withPlaceDetail } from '../src/api/places.ts'
+import { toFestivalPlace, withPlaceDetail, placeCategoryLabels } from '../src/api/places.ts'
 import { getFilteredPlaces, mapCategories } from '../src/data/festivalMap.ts'
 import { getPlacesByDistance } from '../src/utils/mapPlaces.ts'
 
@@ -26,10 +26,29 @@ test('최신 장소 분류의 배달존을 지도 필터와 상세에 연결한�
   assert.equal(delivery.category, 'delivery')
   assert.equal(delivery.status, '배달존')
   assert.deepEqual(getFilteredPlaces('delivery', [stage, delivery]), [delivery])
-  assert.deepEqual(mapCategories.map(category => category.id), ['all', 'stage', 'restroom', 'delivery'])
+  assert.deepEqual(mapCategories.map(category => category.id), ['all', 'stage', 'restroom', 'delivery', 'booth'])
   const detail = withPlaceDetail(delivery, { id: 8, name: '정문 배달존', category: 'DELIVERY_ZONE', latitude: 35.831, longitude: 128.753, description: '정문 앞에서 수령', building: null, floor: null, events: [{ id: 2, name: '배달 수령', timeText: '18:00~22:00', sortOrder: 1 }] })
   assert.equal(detail.status, '배달존')
   assert.equal(detail.events?.[0].name, '배달 수령')
+})
+
+test('푸드트럭은 서버 좌표·운영 시간을 유지하고 별도 필터로 조회한다', () => {
+  const source = { id: 9, name: '커피차·푸드트럭', category: 'BOOTH' as const, latitude: 35.8348, longitude: 128.7553 }
+  const booth = toFestivalPlace(source)
+  const stage = toFestivalPlace({ ...source, id: 1, name: '공연장', category: 'STAGE' })
+  assert.equal(booth.category, 'booth')
+  assert.equal(booth.status, '푸드트럭')
+  assert.equal(placeCategoryLabels.BOOTH, '푸드트럭')
+  assert.deepEqual(booth.position, [source.latitude, source.longitude])
+  assert.deepEqual(getFilteredPlaces('booth', [stage, booth]), [booth])
+  assert.deepEqual(getFilteredPlaces('all', [stage, booth]), [stage, booth])
+  const events = [{ id: 3, name: '운영 시간', timeText: '15:00~22:00', sortOrder: 0 }]
+  const detail = withPlaceDetail(booth, { ...source, latitude: 35.8349, description: '무대 반대편', building: null, floor: null, events })
+  assert.equal(detail.name, source.name)
+  assert.equal(detail.category, 'booth')
+  assert.equal(detail.status, '푸드트럭')
+  assert.deepEqual(detail.position, [35.8349, source.longitude])
+  assert.deepEqual(detail.events, events)
 })
 
 test('현재 위치가 있으면 가까운 장소순, 없으면 서버 순서를 유지한다', () => {
