@@ -62,16 +62,16 @@ export function useKakaoFestivalMap(containerRef: RefObject<HTMLDivElement | nul
     if (!instance) return
     const { maps, map } = instance
     const overlays = places.map(place => {
-      const category = mapCategories.find(item => item.id === place.category)!
+      const category = mapCategories.find(item => item.id === place.category)
       const content = document.createElement('button')
       content.type = 'button'
-      content.className = `festival-marker grid size-11 cursor-pointer place-items-center rounded-full border-2 bg-white shadow-[0_3px_8px_#24375240] ${place.category === 'restroom' ? 'border-[#75a7e7]' : place.category === 'delivery' ? 'border-[#596579]' : 'border-[#ef7276]'}`
+      content.className = `festival-marker grid size-11 cursor-pointer place-items-center rounded-full border-2 bg-white shadow-[0_3px_8px_#24375240] ${place.category === 'restroom' ? 'border-[#75a7e7]' : place.category === 'booth' ? 'border-[#eaa44f]' : place.category === 'stage' ? 'border-[#ef7276]' : 'border-[#596579]'}`
       content.title = place.name
       content.setAttribute('aria-label', `${place.name} · ${place.status}`)
       const icon = document.createElement('span')
       icon.className = 'festival-marker-content block text-[23px] leading-none'
       icon.setAttribute('aria-hidden', 'true')
-      icon.textContent = category.icon
+      icon.textContent = category?.icon || '📍'
       content.append(icon)
       content.onclick = () => onSelect(place.id)
       const overlay = new maps.CustomOverlay({ map, position: new maps.LatLng(...place.position), content, xAnchor: .5, yAnchor: .5, clickable: true })

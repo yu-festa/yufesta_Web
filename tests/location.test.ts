@@ -93,14 +93,15 @@ test('동기 오류와 예외가 발생해도 위치 구독을 남기지 않는�
   assert.equal(states.at(-1)?.status, 'error')
 })
 
-test('장소 필터는 해당 장소만 반환하고 미확인 배달존은 만들지 않는다', () => {
+test('장소 필터는 해당 장소만 반환하고 미등록 배달존·푸드트럭 핀은 만들지 않는다', () => {
   const all = getFilteredPlaces('all')
   assert.ok(all.length > 0)
   assert.equal(new Set(all.map(place => place.id)).size, all.length)
-  for (const category of ['stage', 'restroom', 'delivery'] as const) {
+  for (const category of ['stage', 'restroom', 'delivery', 'booth'] as const) {
     assert.deepEqual(getFilteredPlaces(category), all.filter(place => place.category === category))
   }
   assert.equal(getFilteredPlaces('delivery').length, 0)
+  assert.equal(getFilteredPlaces('booth').length, 0)
   assert.ok(all.every(place => place.position[0] > 35.82 && place.position[0] < 35.84
     && place.position[1] > 128.74 && place.position[1] < 128.77))
 })
