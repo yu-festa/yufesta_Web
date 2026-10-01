@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { toFestivalPlace, withPlaceDetail, placeCategoryLabels } from '../src/api/places.ts'
+import type { ServerPlaceCategory } from '../src/api/places.ts'
 import { getFilteredPlaces, mapCategories } from '../src/data/festivalMap.ts'
 import { getPlacesByDistance } from '../src/utils/mapPlaces.ts'
 
@@ -49,6 +50,20 @@ test('푸드트럭은 서버 좌표·운영 시간을 유지하고 별도 필터
   assert.equal(detail.status, '푸드트럭')
   assert.deepEqual(detail.position, [35.8349, source.longitude])
   assert.deepEqual(detail.events, events)
+})
+
+test('알 수 없는 서버 카테고리는 기타 장소로 보존하며 기존 필터에 섞지 않는다', () => {
+  for (const category of ['INFORMATION', '', '__proto__', 'constructor']) {
+    const source = { id: 10, name: '새 장소', category: category as ServerPlaceCategory, latitude: 35.834, longitude: 128.753 }
+    const place = toFestivalPlace(source)
+    const detail = withPlaceDetail(place, { ...source, description: '새 안내', building: null, floor: null, events: [] })
+    for (const item of [place, detail]) {
+      assert.equal(item.category, 'other')
+      assert.equal(item.status, '기타 장소')
+      assert.deepEqual(getFilteredPlaces('all', [item]), [item])
+      for (const filter of ['stage', 'restroom', 'delivery', 'booth'] as const) assert.deepEqual(getFilteredPlaces(filter, [item]), [])
+    }
+  }
 })
 
 test('현재 위치가 있으면 가까운 장소순, 없으면 서버 순서를 유지한다', () => {

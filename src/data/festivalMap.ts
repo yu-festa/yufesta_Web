@@ -1,7 +1,7 @@
 import { restroomBuildings, restroomDetailLevel, restroomSources } from './restrooms.ts'
 
-export type PlaceCategory = 'stage' | 'restroom' | 'delivery' | 'booth'
-export type MapFilter = 'all' | PlaceCategory
+export type PlaceCategory = 'stage' | 'restroom' | 'delivery' | 'booth' | 'other'
+export type MapFilter = 'all' | Exclude<PlaceCategory, 'other'>
 export type Coordinates = [latitude: number, longitude: number]
 
 export const mapCategories = [

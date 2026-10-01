@@ -2,7 +2,7 @@ import { useAdminAction, useAdminResource } from '../../hooks/useAdminData'
 import { useRef, useState } from 'react'
 import { createPlace, createPlaceEvent, updatePlace, updatePlaceEvent } from '../../api/admin'
 import type { AdminPlace, EventInput, PlaceInput } from '../../api/admin'
-import { getPlace, getPlaces, placeCategoryLabels } from '../../api/places'
+import { getPlace, getPlaces, getPlaceCategoryLabel, placeCategoryLabels } from '../../api/places'
 import type { PlaceDetail, PlaceEvent, ServerPlaceCategory } from '../../api/places'
 import { Feedback, Field, ResourceState, SectionHeading } from '../../components/admin/AdminShared'
 
@@ -51,11 +51,11 @@ export default function AdminPlaces() {
     <div ref={editorRef}>{editing && <PlaceForm key={editing === 'new' ? 'new' : `${editing.detail.id}`} selection={editing === 'new' ? null : editing} busy={action.busy} onCancel={() => setEditing(null)} onSave={savePlace} />}</div>
     <div className="admin-toolbar"><strong>공개 장소</strong><button className="admin-link" disabled={resource.loading || action.busy} onClick={() => void resource.refresh()}>목록 새로고침</button></div>
     <ResourceState {...resource} onRetry={() => void resource.refresh()} />
-    {!resource.loading && !resource.error && <div className="admin-place-grid">{!resource.data?.length && <div className="admin-empty">공개된 장소가 없습니다.</div>}{resource.data?.map(place => <button key={place.id} className={`admin-place-item ${selected?.detail.id === place.id ? 'selected' : ''}`} disabled={action.busy} onClick={() => open(place.id)}><span className="admin-badge">{categories[place.category]}</span><strong>{place.name}</strong><span className="admin-muted">장소 #{place.id} · 상세 보기 →</span></button>)}</div>}
+    {!resource.loading && !resource.error && <div className="admin-place-grid">{!resource.data?.length && <div className="admin-empty">공개된 장소가 없습니다.</div>}{resource.data?.map(place => <button key={place.id} className={`admin-place-item ${selected?.detail.id === place.id ? 'selected' : ''}`} disabled={action.busy} onClick={() => open(place.id)}><span className="admin-badge">{getPlaceCategoryLabel(place.category)}</span><strong>{place.name}</strong><span className="admin-muted">장소 #{place.id} · 상세 보기 →</span></button>)}</div>}
     <div ref={detailRef}>{selected && <section className="admin-card admin-editor">
       <div className="admin-card-title"><h3>{selected.detail.name}</h3><span className="admin-badge blue">{selected.admin?.active === false ? '비공개' : '공개'} · #{selected.detail.id}</span></div>
       <p className="admin-report-body">{selected.detail.description || '등록된 설명이 없습니다.'}</p>
-      <dl className="admin-details"><dt>구분</dt><dd>{categories[selected.detail.category]}</dd><dt>건물 / 층</dt><dd>{selected.detail.building || '—'} / {selected.detail.floor || '—'}</dd><dt>좌표</dt><dd>{selected.detail.latitude}, {selected.detail.longitude}</dd></dl>
+      <dl className="admin-details"><dt>구분</dt><dd>{getPlaceCategoryLabel(selected.detail.category)}</dd><dt>건물 / 층</dt><dd>{selected.detail.building || '—'} / {selected.detail.floor || '—'}</dd><dt>좌표</dt><dd>{selected.detail.latitude}, {selected.detail.longitude}</dd></dl>
       <div className="admin-actions"><button className="admin-button secondary" disabled={action.busy} onClick={() => edit(selected)}>장소 수정</button><button className="admin-button" disabled={action.busy} onClick={() => { setEditing(null); setEventForm('new') }}>+ 이벤트 등록</button></div>
       <div className="admin-inset"><h4>장소 이벤트</h4>{!selected.detail.events.length && <p className="admin-muted">등록된 이벤트가 없습니다.</p>}{selected.detail.events.map(event => <div className="admin-event" key={event.id}><div><strong>{event.name}</strong><p>{event.timeText} · 표시 순서 {event.sortOrder}</p></div><button className="admin-link" disabled={action.busy} onClick={() => { setEditing(null); setEventForm(event) }}>수정</button></div>)}</div>
       {eventForm && <EventForm key={`${selected.detail.id}:${eventForm === 'new' ? 'new' : eventForm.id}`} item={eventForm === 'new' ? null : eventForm} busy={action.busy} onCancel={() => setEventForm(null)} onSave={saveEvent} />}
