@@ -76,8 +76,9 @@ export function buildTimetable(slots: TimetableSlot[]): { layout: TimetableLayou
     const height = (slotEnd - slotStart) * pixelsPerMinute
     const centerX = x + displayColumnWidth / 2
     const centerY = y + height / 2
-    const fill = index === 0 ? '#cddcff' : index === 1 ? '#7d9dff' : '#ebebeb'
-    shapes.push({ kind: 'rect', x, y, width: displayColumnWidth, height, fill, shadow: index < 2 })
+    const isNext = index > 0 && valid[index - 1].slot.isLive
+    const fill = slot.isLive ? '#cddcff' : isNext ? '#7d9dff' : '#ebebeb'
+    shapes.push({ kind: 'rect', x, y, width: displayColumnWidth, height, fill, shadow: slot.isLive || isNext })
     shapes.push({ kind: 'text', x: centerX, y: centerY - (height < 60 ? 7 : 13), text: shortTitle(slot.title, displayColumnWidth), size: slot.title.length > 20 ? 12 : 15, weight: 500, fill: '#111111', anchor: 'middle' })
     shapes.push({ kind: 'text', x: centerX, y: centerY + (height < 60 ? 10 : 5), text: `${timeLabel(slotStart, firstDay)}-${timeLabel(slotEnd, firstDay)}`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })
     if (height >= 60) shapes.push({ kind: 'text', x: centerX, y: centerY + 19, text: `(${slotEnd - slotStart}분)`, size: 10, weight: 400, fill: '#333333', anchor: 'middle' })

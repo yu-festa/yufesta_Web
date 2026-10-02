@@ -24,6 +24,7 @@ test('원래 차트처럼 한 무대의 공연도 좌우 두 열에 배치하고
   assert.equal(layout.width, 390)
   assert.deepEqual(shapes.filter(shape => shape.kind === 'rect' && shape.y === 0).map(shape => shape.x), [48, 212])
   assert.deepEqual(shapes.filter(shape => shape.kind === 'rect' && shape.y > 0).map(shape => shape.x), [48, 212])
+  assert.deepEqual(shapes.filter(shape => shape.kind === 'rect' && shape.y > 0).map(shape => shape.fill), ['#ebebeb', '#cddcff'])
   assert.ok(shapes.some(shape => shape.kind === 'text' && shape.text === '15:30-15:55'))
   assert.ok(shapes.some(shape => shape.kind === 'text' && shape.text === 'LIVE'))
 })
@@ -37,4 +38,35 @@ test('서로 다른 무대는 각 열에 고정하고 자정 이후도 이어지
   assert.deepEqual(shapes.filter(shape => shape.kind === 'rect' && shape.y > 0).map(shape => shape.x), [48, 212, 48])
   assert.ok(shapes.some(shape => shape.kind === 'text' && shape.text === '24:00'))
   assert.ok(shapes.some(shape => shape.kind === 'text' && shape.text === '24:20-24:50'))
+})
+
+test('서버의 LIVE 전환을 따라 현재 공연과 변경 시간순 바로 다음 공연의 색상·그림자가 이동한다', () => {
+  const opening = slot(1, '개회식', '2026-10-02T15:00:00', '2026-10-02T15:10:00')
+  const delayed = slot(2, '지연 공연', '2026-10-02T15:10:00', '2026-10-02T15:20:00')
+  delayed.effectiveStartAt = '2026-10-02T15:30:00'
+  delayed.effectiveEndAt = '2026-10-02T15:40:00'
+  const current = slot(3, '현재 공연', '2026-10-02T15:20:00', '2026-10-02T15:30:00')
+  const closing = slot(4, '마지막 공연', '2026-10-02T15:40:00', '2026-10-02T15:50:00')
+  const slots = [closing, delayed, opening, current]
+  const appearance = () => buildTimetable(slots).shapes
+    .filter(shape => shape.kind === 'rect')
+    .filter(shape => shape.y > 0)
+    .map(shape => ({ fill: shape.fill, shadow: shape.shadow }))
+  const inactive = { fill: '#ebebeb', shadow: false }
+  const live = { fill: '#cddcff', shadow: true }
+  const next = { fill: '#7d9dff', shadow: true }
+
+  current.isLive = true
+  assert.deepEqual(appearance(), [inactive, live, next, inactive])
+
+  current.isLive = false
+  delayed.isLive = true
+  assert.deepEqual(appearance(), [inactive, inactive, live, next])
+
+  delayed.isLive = false
+  closing.isLive = true
+  assert.deepEqual(appearance(), [inactive, inactive, inactive, live])
+
+  closing.isLive = false
+  assert.deepEqual(appearance(), [inactive, inactive, inactive, inactive])
 })
