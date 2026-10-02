@@ -14,6 +14,7 @@ import instatingBackground from '../assets/Main/InstatingBackground.webp'
 import map from '../assets/Main/Map.svg'
 import find from '../assets/Main/Find.svg'
 import type { MatchSummary } from '../api/match'
+import { roundApplicantCount } from '../utils/matchApplicantCount'
 
 const tickerFrames: Keyframe[] = [{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }]
 
@@ -43,6 +44,7 @@ export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimeta
   const clubsResource = usePublicResource(getClubs)
   const cheers = cheersResource.data?.slice(0, 9) ?? []
   const banner = noticesResource.data?.find(notice => notice.banner)
+  const applicantCount = roundApplicantCount(matchSummary)
   const [cheersPaused, setCheersPaused] = useState(false)
   const [cheersHovered, setCheersHovered] = useState(false)
   const [cheersFocused, setCheersFocused] = useState(false)
@@ -108,6 +110,9 @@ export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimeta
           <div className={"flex items-center gap-[6px] [&_>_span]:inline-flex [&_>_span]:items-center [&_>_span]:gap-[5px] [&_>_span]:[padding:4px_9px] [&_>_span]:[border:1px_solid_#afcce65c] [&_>_span]:rounded-[30px] [&_>_span]:bg-[#163049bd] [&_>_span]:text-[clamp(9px,_2.5cqw,_11px)] [&_>_span]:leading-[1.3] [&_>_span]:font-[650] [&_>_span]:text-[#e5f0fc] [&_>_span]:[box-shadow:inset_0_1px_1px_#ffffff2b] instating-banner-badges"}><span>{matchSummary ? `${matchSummary.currentRound.seq}차 / ${matchSummary.currentRound.status === 'OPEN' ? '접수 중' : matchSummary.currentRound.status === 'SCHEDULED' ? '접수 예정' : matchSummary.currentRound.status === 'CLOSED' ? '마감' : '발표'}` : '1차 / 추첨'}</span></div>
           <h2 id="instating-title" className={"mt-[11px] [font-family:'Rubik_One',_sans-serif] text-[clamp(22px,_8.1cqw,_38px)] font-normal leading-[1.15] tracking-[-.6px] whitespace-nowrap [text-shadow:0_2px_12px_#100b3544] instating-banner-title"}>INSTA - TING</h2>
           <p className={"mt-[14px] text-[clamp(11px,_2.8cqw,_13px)] leading-[1.55] font-medium instating-banner-description"}>비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</p>
+          <p className="mt-3 w-fit max-w-full rounded-full border border-white/20 bg-[#061c48]/70 px-3 py-1.5 text-[clamp(11px,2.8cqw,13px)] leading-relaxed text-[#e5f0fc] backdrop-blur-sm instating-banner-applicants" role="status" aria-atomic="true">
+            {applicantCount === null ? '신청 인원을 확인하고 있어요' : <>인스타팅 {matchSummary?.currentRound.seq}차 지금까지 총 <strong className="font-bold text-white tabular-nums">{applicantCount.toLocaleString('ko-KR')}명</strong>이 신청했어요</>}
+          </p>
           <AnnouncementCountdown key={matchSummary?.serverNow ?? 'fallback'} publishAt={matchSummary?.currentRound.publishAt} serverNow={matchSummary?.serverNow} receivedAt={receivedAt} roundSeq={matchSummary?.currentRound.seq} />
           <div className={"flex gap-[12px] mt-[24px] [@container(max-width:_320px)]:gap-[8px] instating-banner-actions"}>
             <button type="button" className={"inline-flex justify-between items-center gap-[10px] min-h-[44px] [padding:10px_14px] rounded-[11px] bg-[#123d78]/65 text-[#f0f7ff] border border-[#c9e7ff]/50 backdrop-blur-xl shadow-[inset_0_1px_0_#ffffff33,0_4px_16px_#02133033] text-[clamp(11px,_2.8cqw,_13px)] font-[650] whitespace-nowrap [transition:background_.15s,_transform_.15s] [&_svg]:w-[15px] [&_svg]:h-[15px] [&_svg]:shrink-0 [&_svg]:[stroke-width:3] [&:hover:not(:disabled)]:bg-[#2460a0]/80 [&:active:not(:disabled)]:[transform:translateY(1px)] [@container(max-width:_320px)]:px-[11px] [@container(max-width:_320px)]:gap-[8px] [@media(prefers-reduced-motion:_reduce)]:[transition:none] instating-banner-action"} onClick={onApplyInstating} disabled={alreadyApplied || !canApply}>{alreadyApplied ? '신청 완료' : canApply ? '신청하기' : '접수 대기'}<Icon name="arrow" /></button>

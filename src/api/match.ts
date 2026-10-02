@@ -19,6 +19,7 @@ export type MatchSummary = {
   serverNow: string
   currentRound: MatchRound
   nextRound: MatchRound | null
+  // 현재 회차의 유효한 신청 수입니다. 누적 수로 사용하지 않습니다.
   applicantCount: number
   my: null | {
     applied: boolean

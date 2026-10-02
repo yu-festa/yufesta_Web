@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { cancelMyApplication, createMatchApplication, getMyApplication, getMyMatchResults, rejoinMatch, reportMatch, updateMyApplication } from '../src/api/match.ts'
+import { cancelMyApplication, createMatchApplication, getMatchSummary, getMyApplication, getMyMatchResults, rejoinMatch, reportMatch, updateMyApplication } from '../src/api/match.ts'
 import type { MatchSummary, MatchTagOption } from '../src/api/match.ts'
 import { ApiError } from '../src/api/client.ts'
 import { applicationToForm, isMatchOpen, parseMatchTime, toMatchApplicationUpdate, toMatchApplicationRequest } from '../src/utils/match.ts'
 import { toMatchResult } from '../src/utils/matchResult.ts'
 import { profileFromSession } from '../src/utils/profile.ts'
+import { roundApplicantCount } from '../src/utils/matchApplicantCount.ts'
 
 const originalFetch = globalThis.fetch
 const originalDocument = globalThis.document
@@ -19,6 +20,37 @@ const summary: MatchSummary = {
   serverNow: '2026-10-02T15:30:00', currentRound: { seq: 2, status: 'OPEN', openAt: '2026-10-02T14:00:00', closeAt: '2026-10-02T15:50:00', publishAt: '2026-10-02T16:00:00' },
   nextRound: null, applicantCount: 100, my: { applied: false, lastResult: { roundSeq: 1, status: 'MATCHED' } },
 }
+
+test('배너는 회차 전환 시 해당 회차의 신청 인원을 표시한다', async () => {
+  const snapshots: MatchSummary[] = [
+    { ...summary, currentRound: { ...summary.currentRound, seq: 1 }, applicantCount: 122 },
+    { ...summary, applicantCount: 0 },
+    { ...summary, applicantCount: 38 },
+    { ...summary, currentRound: { ...summary.currentRound, status: 'PUBLISHED' }, applicantCount: 38 },
+  ]
+  globalThis.fetch = async input => {
+    assert.equal(new URL(String(input)).pathname, '/api/v1/match/summary')
+    return Response.json({ data: snapshots.shift() })
+  }
+  for (const [seq, count] of [[1, 122], [2, 0], [2, 38], [2, 38]]) {
+    const snapshot = await getMatchSummary()
+    assert.equal(snapshot.currentRound.seq, seq)
+    assert.equal(roundApplicantCount(snapshot), count)
+  }
+})
+
+test('2차에 처음 방문해도 해당 회차 인원을 사용하며 응답 대기는 0명과 구분한다', () => {
+  assert.equal(roundApplicantCount(summary), 100)
+  assert.equal(roundApplicantCount({ ...summary, applicantCount: 0 }), 0)
+  assert.equal(roundApplicantCount(null), null)
+  assert.equal(roundApplicantCount(), null)
+})
+
+test('신청 인원의 비정상 숫자를 표시하지 않는다', () => {
+  for (const count of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, '122' as unknown as number]) {
+    assert.equal(roundApplicantCount({ ...summary, applicantCount: count }), null)
+  }
+})
 
 test('신청 정보를 정규화하고 태그·공연 선택·세 가지 동의를 명세 필드로 전송한다', () => {
   assert.deepEqual(toMatchApplicationRequest(form, options, [true, true, true]), {
