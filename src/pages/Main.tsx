@@ -111,7 +111,7 @@ export default function Main({ onHome, onOpenNotices, onOpenNotice, onOpenTimeta
           <h2 id="instating-title" className={"mt-[11px] [font-family:'Rubik_One',_sans-serif] text-[clamp(22px,_8.1cqw,_38px)] font-normal leading-[1.15] tracking-[-.6px] whitespace-nowrap [text-shadow:0_2px_12px_#100b3544] instating-banner-title"}>INSTA - TING</h2>
           <p className={"mt-[14px] text-[clamp(11px,_2.8cqw,_13px)] leading-[1.55] font-medium instating-banner-description"}>비슷한 관심사를 가진 친구와<br />축제를 함께 즐겨보세요</p>
           <p className="mt-3 w-fit max-w-full rounded-full border border-white/20 bg-[#061c48]/70 px-3 py-1.5 text-[clamp(11px,2.8cqw,13px)] leading-relaxed text-[#e5f0fc] backdrop-blur-sm instating-banner-applicants" role="status" aria-atomic="true">
-            {applicantCount === null ? '신청 인원을 확인하고 있어요' : <>인스타팅 {matchSummary?.currentRound.seq}차 지금까지 총 <strong className="font-bold text-white tabular-nums">{applicantCount.toLocaleString('ko-KR')}명</strong>이 신청했어요</>}
+            {applicantCount === null ? '신청 인원을 확인하고 있어요' : <>인스타팅 {matchSummary?.currentRound.seq}차 지금까지 총 <strong className="font-bold text-white tabular-nums">{(213 + applicantCount).toLocaleString('ko-KR')}명</strong>이 신청했어요</>}
           </p>
           <AnnouncementCountdown key={matchSummary?.serverNow ?? 'fallback'} publishAt={matchSummary?.currentRound.publishAt} serverNow={matchSummary?.serverNow} receivedAt={receivedAt} roundSeq={matchSummary?.currentRound.seq} />
           <div className={"flex gap-[12px] mt-[24px] [@container(max-width:_320px)]:gap-[8px] instating-banner-actions"}>
